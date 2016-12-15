@@ -1,0 +1,126 @@
+header, .full-width {
+    width: 100%;
+    background: #ccc;
+}
+.wrap {
+    width: 100%;
+    margin: 0 auto;
+}
+
+#Navbar .nav > li > a {
+    color: #ffffff;
+}
+
+#Navbar .nav li a:hover {
+    color: #005eb8;
+}
+
+#Navbar .nav li a:focus {
+    color: #005eb8;
+}
+
+footer {
+    background-color: #ffffff;
+    margin-top: 0;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    padding: 10px 0;
+    text-shadow: none;
+    -webkit-box-shadow: none;
+    box-shadow: none;
+}
+
+html {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    position:relative;
+    min-height: 100%;
+    margin: 0;
+    padding-bottom: 100px;
+}
+
+.navbar-nhs {
+    background-color: #005eb8;
+    border-color: #005eb8;
+}
+
+@media screen and (min-width: 768px) {
+    .content .container {
+        margin-top: 20px;
+    }
+
+    body {
+        padding-top: 56px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .content .container {
+        margin-top: 20px;
+    }
+
+    body {
+        padding-top: 50px;
+    }
+
+    .navbar-nhs .navbar-toggle {
+        border-color: #ffffff;
+        float: left;
+        margin-left: 15px;
+    }
+
+    .navbar-nhs .navbar-toggle .icon-bar {
+        background-color: #ffffff;
+    }
+
+    .navbar-brand {
+        float:right;
+    }
+}
+
+#info .equal .panel-body ul {
+    padding-left: 10px;
+}
+
+#info .equal .panel-body {
+    min-height: 200px;
+}
+
+#login .form-group label {
+    margin-top: 20px;
+}
+
+/* Restyled g:paginate based on bootstrap paginate */
+.pagination>a, .pagination>span {
+    position: relative;
+    float: left;
+    padding: 6px 12px;
+    margin-left: -1px;
+    line-height: 1.42857143;
+    color: #337ab7;
+    text-decoration: none;
+    background-color: #fff;
+    border: 1px solid #ddd;
+}
+
+.pagination > a {
+    text-decoration: none !important;
+}
+
+.pagination>a:hover {
+    background-color: #f0f0f0;
+}
+
+.pagination .currentStep, .pagination .currentStep:focus, .pagination .currentStep:hover {
+    z-index: 0;
+    color: #fff;
+    cursor: default;
+    background-color: #337ab7;
+    border-color: #337ab7;
+}
