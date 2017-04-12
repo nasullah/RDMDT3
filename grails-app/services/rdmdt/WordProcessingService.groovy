@@ -1,10 +1,8 @@
 package rdmdt
 
 import grails.transaction.Transactional
-import org.apache.commons.lang.BooleanUtils
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage
-import org.codehaus.groovy.grails.web.util.WebUtils;
-
+import org.grails.web.util.WebUtils
 
 /**
  * WordProcessingService
@@ -100,6 +98,25 @@ class WordProcessingService {
                 "                            <w:szCs w:val=\"21\"/>\n" +
                 "                        </w:rPr>\n" +
                 "                        <w:t xml:space=\"preserve\">Applicant: ${referralRecordInstance.clinician.forename.toString()} ${referralRecordInstance.clinician.surname.toString()}</w:t>\n" +
+                "                    </w:r>\n" +
+                "                </w:p>"
+
+        def clinicianTelephoneNumber = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\">\n" +
+                "                    <w:pPr>\n" +
+                "                        <w:spacing w:after=\"120\"/>\n" +
+                "                        <w:rPr>\n" +
+                "                            <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
+                "                            <w:sz w:val=\"21\"/>\n" +
+                "                            <w:szCs w:val=\"21\"/>\n" +
+                "                        </w:rPr>\n" +
+                "                    </w:pPr>\n" +
+                "                    <w:r>\n" +
+                "                        <w:rPr>\n" +
+                "                            <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
+                "                            <w:sz w:val=\"21\"/>\n" +
+                "                            <w:szCs w:val=\"21\"/>\n" +
+                "                        </w:rPr>\n" +
+                "                        <w:t xml:space=\"preserve\">Applicant Telephone Number: ${referralRecordInstance.clinician.telephone.toString() ?: ''}</w:t>\n" +
                 "                    </w:r>\n" +
                 "                </w:p>"
 
@@ -215,6 +232,24 @@ class WordProcessingService {
                 "                                        <w:szCs w:val=\"20\"/>\n" +
                 "                                    </w:rPr>\n" +
                 "                                    <w:t xml:space=\"preserve\">Unique reference: ${referralRecordInstance.uniqueRef}</w:t>\n" +
+                "                                </w:r>\n" +
+                "                            </w:p>\n" +
+                "                            <w:p>\n" +
+                "                                <w:pPr>\n" +
+                "                                    <w:spacing w:after=\"120\"/>\n" +
+                "                                    <w:rPr>\n" +
+                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
+                "                                        <w:sz w:val=\"20\"/>\n" +
+                "                                        <w:szCs w:val=\"20\"/>\n" +
+                "                                    </w:rPr>\n" +
+                "                                </w:pPr>\n" +
+                "                                <w:r>\n" +
+                "                                    <w:rPr>\n" +
+                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
+                "                                        <w:sz w:val=\"20\"/>\n" +
+                "                                        <w:szCs w:val=\"20\"/>\n" +
+                "                                    </w:rPr>\n" +
+                "                                    <w:t xml:space=\"preserve\">NHS Number: ${referralRecordInstance.patients?.find{p -> p.isProband}?.nhsNumber ?: ''}</w:t>\n" +
                 "                                </w:r>\n" +
                 "                            </w:p>\n" +
                 "                            <w:p>\n" +
@@ -396,6 +431,7 @@ class WordProcessingService {
         mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(monthYear));
         mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(applicantInformation));
         mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(clinician));
+        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(clinicianTelephoneNumber));
         mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(responsibleConsultant));
         mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(coApplicants));
         mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(probandInformation));
@@ -2789,3 +2825,4 @@ class WordProcessingService {
         file.delete()
     }
 }
+
