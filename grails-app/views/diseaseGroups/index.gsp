@@ -47,20 +47,11 @@
 			</div>
 		</div>
 
-	<a  id="quicktabs-tab-galeri-1"
-	   href="/test/public_html/10960.4.html">NEWS</a>
-
-	<button>Change href Value</button>
-	<g:link uri ="/public_html/10960.4.html" id="w3s">Book Home</g:link>
-	<g:javascript plugin="jquery" library="jquery" />
-	<script>
-		$(document).ready(function(){
-			$("button").click(function(){
-				var ff = "/test/public_html/10964.14.html"
-				$("#quicktabs-tab-galeri-1").attr("href", ff);
-			});
-		});
-	</script>
+	%{--<g:form action="test" method="post" enctype="multipart/form-data">--}%
+		%{--<p class="text-success">Upload file</p>--}%
+		%{--<input type="file" name="file" id="file" />--}%
+		%{--<button type="submit" class="btn btn-success btn-xs" value="Upload"><span class="glyphicon glyphicon-upload"></span> Upload</button>--}%
+	%{--</g:form>--}%
 
 	</body>
 </html>
