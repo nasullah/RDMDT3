@@ -118,4 +118,124 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="col-lg-6">
+                    <div id="clinicalDetails7">
+                        <label class="control-label">Clinical details (please include any features which are notable by their absence)</label>
+                        <g:if test="${referralRecordInstance?.clinicalDetails?.getAt(7)?.clinicalDetailsName}">
+                            <g:set var="cDetails7" value="${referralRecordInstance?.clinicalDetails?.getAt(7)?.clinicalDetailsName}" />
+                        </g:if>
+                        <g:else>
+                            <g:set var="cDetails7" value="${params.cDetails7}" />
+                        </g:else>
+                        <div>
+                            <g:field class="form-control" name="cDetails7" type="text" value="${cDetails7}"/>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div id="clinicalDetails8">
+                        <label class="control-label">Clinical details (please include any features which are notable by their absence)</label>
+                        <g:if test="${referralRecordInstance?.clinicalDetails?.getAt(8)?.clinicalDetailsName}">
+                            <g:set var="cDetails8" value="${referralRecordInstance?.clinicalDetails?.getAt(8)?.clinicalDetailsName}" />
+                        </g:if>
+                        <g:else>
+                            <g:set var="cDetails8" value="${params.cDetails8}" />
+                        </g:else>
+                        <div>
+                            <g:field class="form-control" name="cDetails8" type="text" value="${cDetails8}"/>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div id="clinicalDetails9">
+                        <label class="control-label">Clinical details (please include any features which are notable by their absence)</label>
+                        <g:if test="${referralRecordInstance?.clinicalDetails?.getAt(9)?.clinicalDetailsName}">
+                            <g:set var="cDetails9" value="${referralRecordInstance?.clinicalDetails?.getAt(9)?.clinicalDetailsName}" />
+                        </g:if>
+                        <g:else>
+                            <g:set var="cDetails9" value="${params.cDetails9}" />
+                        </g:else>
+                        <div>
+                            <g:field class="form-control" name="cDetails9" type="text" value="${cDetails9}"/>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div id="clinicalDetails10">
+                        <label class="control-label">Clinical details (please include any features which are notable by their absence)</label>
+                        <g:if test="${referralRecordInstance?.clinicalDetails?.getAt(10)?.clinicalDetailsName}">
+                            <g:set var="cDetails10" value="${referralRecordInstance?.clinicalDetails?.getAt(10)?.clinicalDetailsName}" />
+                        </g:if>
+                        <g:else>
+                            <g:set var="cDetails10" value="${params.cDetails10}" />
+                        </g:else>
+                        <div>
+                            <g:field class="form-control" name="cDetails10" type="text" value="${cDetails10}"/>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div id="clinicalDetails11">
+                        <label class="control-label">Clinical details (please include any features which are notable by their absence)</label>
+                        <g:if test="${referralRecordInstance?.clinicalDetails?.getAt(11)?.clinicalDetailsName}">
+                            <g:set var="cDetails11" value="${referralRecordInstance?.clinicalDetails?.getAt(11)?.clinicalDetailsName}" />
+                        </g:if>
+                        <g:else>
+                            <g:set var="cDetails11" value="${params.cDetails11}" />
+                        </g:else>
+                        <div>
+                            <g:field class="form-control" name="cDetails11" type="text" value="${cDetails11}"/>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div id="clinicalDetails12">
+                        <label class="control-label">Clinical details (please include any features which are notable by their absence)</label>
+                        <g:if test="${referralRecordInstance?.clinicalDetails?.getAt(12)?.clinicalDetailsName}">
+                            <g:set var="cDetails12" value="${referralRecordInstance?.clinicalDetails?.getAt(12)?.clinicalDetailsName}" />
+                        </g:if>
+                        <g:else>
+                            <g:set var="cDetails12" value="${params.cDetails12}" />
+                        </g:else>
+                        <div>
+                            <g:field class="form-control" name="cDetails12" type="text" value="${cDetails12}"/>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div id="clinicalDetails13">
+                        <label class="control-label">Clinical details (please include any features which are notable by their absence)</label>
+                        <g:if test="${referralRecordInstance?.clinicalDetails?.getAt(13)?.clinicalDetailsName}">
+                            <g:set var="cDetails13" value="${referralRecordInstance?.clinicalDetails?.getAt(13)?.clinicalDetailsName}" />
+                        </g:if>
+                        <g:else>
+                            <g:set var="cDetails13" value="${params.cDetails13}" />
+                        </g:else>
+                        <div>
+                            <g:field class="form-control" name="cDetails13" type="text" value="${cDetails13}"/>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div id="clinicalDetails14">
+                        <label class="control-label">Clinical details (please include any features which are notable by their absence)</label>
+                        <g:if test="${referralRecordInstance?.clinicalDetails?.getAt(14)?.clinicalDetailsName}">
+                            <g:set var="cDetails14" value="${referralRecordInstance?.clinicalDetails?.getAt(14)?.clinicalDetailsName}" />
+                        </g:if>
+                        <g:else>
+                            <g:set var="cDetails14" value="${params.cDetails14}" />
+                        </g:else>
+                        <div>
+                            <g:field class="form-control" name="cDetails14" type="text" value="${cDetails14}"/>
+                        </div>
+                    </div>
+                </div>
             </div>
