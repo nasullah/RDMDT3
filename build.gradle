@@ -71,11 +71,17 @@ dependencies {
     compile "org.grails.plugins:spring-security-core:3.1.1"
     compile "org.grails.plugins:spring-security-ui:3.0.0.M2"
     compile "org.docx4j:docx4j:3.3.0"
-
+    compile "org.grails.plugins:ajax-tags:1.0.0"
     provided "org.springframework.boot:spring-boot-starter-tomcat"
+    compile "org.grails.plugins:export:2.0.0"
 }
 
 assets {
-    minifyJs = true
-    minifyCss = true
+    minifyJs = false
+    minifyCss = false
+    enableDigests = false
+    skipNonDigests = false
+    enableGzip = false
+//    includes = []
+//    excludes = ['**/*.less'] //Example Exclude GLOB pattern
 }
