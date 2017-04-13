@@ -111,3 +111,7 @@ h1 {
 	width: 900px;
 	margin: 0px auto;
 }
+
+.preserve-new-lines {
+    white-space: pre-line;
+}
