@@ -32,4 +32,25 @@ class IndexController {
         listAuditLogData = listAuditLogData.reverse()
         [listAuditLogData: listAuditLogData]
     }
+
+    @Secured(['ROLE_ADMIN'])
+    def loadStarLimsCsvFile(){
+        if(params.starLimsFile){
+            def starLimsFile = request.getFile('starLimsFile')
+            if (!starLimsFile.originalFilename) {
+                flash.message = "Please choose a file"
+//                    respond referralRecordInstance, view: 'create'
+                render view: 'loadStarLimsCsvFile'
+            }else{
+                try {
+                    starLimsFile.transferTo(new File(grailsApplication.config.uploadFolder +'/StarLims/RD_MDT_Header.csv'))
+                    flash.message = "File has been loaded successfully"
+                    redirect controller: "index", action: "index"
+                }
+                catch (Exception ex) {
+                    log.error(ex)
+                }
+            }
+        }
+    }
 }
