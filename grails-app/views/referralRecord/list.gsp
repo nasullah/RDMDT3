@@ -12,29 +12,30 @@
 
 <body>
 
-<p>
-<p>
-<div style="background: rgba(80, 110, 56, 0.04);">
-	<div class="container">
-		<p>
-		<h5 class="text-center">Search Options</h5>
-		<p>
-			<filterpane:filterButton text="Filter This List" />
-			<filterpane:filterPane domain="rdmdt.ReferralRecord"
-								   filterPropertyValues="${[meetingDate: [precision: 'day'], submittedDate: [precision: 'day'], approvedDate: [precision: 'day']]}"
-								   associatedProperties="clinician.name, clinician.telephone, clinician.departmentName, clinician.speciality,
-								   						 patients.givenName, patients.familyName, patients.nhsNumber, patients.gender.genderName,
-								   						 patients.ethnicity.ethnicityName, patients.ege, patients.egeUnit.egeUnitName, clinicalDetails.clinicalDetailsName,
-								   						 unrelatedClinicalFeatures.unrelatedClinicalFeatures, paternal.breastAndOrOvarianCancer,
-								   						 paternal.colorectalCancer, paternal.ischaemicHeartDiseaseOrStroke, paternal.endocrineTumours,
-								   						 maternal.breastAndOrOvarianCancer, maternal.colorectalCancer, maternal.ischaemicHeartDiseaseOrStroke,
-								   						 maternal.endocrineTumours, extraTests.testName"/>
-		<p>
-		<p>
-	</div>
-</div>
+<g:hiddenField id="month" name="month" value="${month}" />
+<g:hiddenField id="year" name="year" value="${year}" />
+
+<filterpane:filterButton text="Filter This List" />
+<filterpane:filterPane domain="rdmdt.ReferralRecord"
+					   filterPropertyValues="${[meetingDate: [precision: 'day'], submittedDate: [precision: 'day'], approvedDate: [precision: 'day']]}"
+					   associatedProperties="clinician.forename, clinician.surname, patients.givenName, patients.familyName, patients.nhsNumber,
+											 patients.ege, patients.egeUnit.egeUnitName, clinicalDetails.clinicalDetailsName,
+											 unrelatedClinicalFeatures.unrelatedClinicalFeatures, paternal.breastAndOrOvarianCancer,
+											 paternal.colorectalCancer, paternal.ischaemicHeartDiseaseOrStroke, paternal.endocrineTumours,
+											 maternal.breastAndOrOvarianCancer, maternal.colorectalCancer, maternal.ischaemicHeartDiseaseOrStroke,
+											 maternal.endocrineTumours, extraTests.testName, referralStatus.referralStatusName"
+					   excludeProperties="causativeVariantAffect, knownGeneVariant, geneticTestingOnProband, otherTestingOnProband, pedigree, furtherDetailsOfHistory, numberOfSamplesForSeq,
+										  identityOfFamilyMembersSamplesForSeq, approvedIdentityOfFamilyMembersSamplesForSeq, samplesForSeqDetails, consanguinityEvidence, consanguinityEvidenceDetails,
+										  penetranceDetails, note, reviewDetails, isAnySampleFromDeceasedIndividuals, isAnySampleFromDeceasedIndividualsDetails, ageOfSymptoms, arrayCGH,
+										  arrayCGHDetails, anyIndividualsForSeqOutOfAreaDetails, otherFamilyMembersAffectedDetails, eligibilityDetails, consentPatientOrFamily, approvalDetails,
+										  notApprovedDetails, adminNote"/>
 
 <hr/>
+
+<p>Number of records: ${referralRecordInstanceTotal == null ? ReferralRecord.count(): referralRecordInstanceTotal}</p>
+
+<hr/>
+
 <section id="list-referralRecord" class="first">
 
 	<table class="table table-bordered margin-top-medium">
@@ -76,10 +77,11 @@
 		</g:each>
 		</tbody>
 	</table>
-	<div class="pagination">
-		<g:paginate total="${referralRecordInstanceTotal == null ? ReferralRecord.count(): referralRecordInstanceTotal}" params="${filterParams}" />
-		<a>Number of records: ${referralRecordInstanceTotal == null ? ReferralRecord.count(): referralRecordInstanceTotal}</a>
-	</div>
+	<g:if test="${!month && !year}">
+		<div class="pagination">
+			<g:paginate total="${referralRecordInstanceTotal == null ? ReferralRecord.count(): referralRecordInstanceTotal}" params="${filterParams}" />
+		</div>
+	</g:if>
 </section>
 
 </body>
