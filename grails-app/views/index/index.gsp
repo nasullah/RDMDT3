@@ -165,14 +165,33 @@
 							<i class="glyphicon glyphicon-list"></i> View Applications
 						</div>
 						<div class="panel-body">
+							<%  Date now = new Date()
+							Integer currentYear = now.year + 1900
+							Integer currentMonth = now.month + 1
+							%>
+							<g:form controller="referralRecord" action="filteredReferralListByStatus" id="form" name="form">
+								<div class="form-inline">
+									<label>Filter by month</label>
+									<div class="form-group">
+										<g:select id="month" name="month" from="${[1,2,3,4,5,6,7,8,9,10,11,12]}" value="${currentMonth}" noSelection="['':'']" onchange="updateAllApplicationsLink()"/>
+									</div>
+									<div class="form-group">
+										<g:select id="year" name="year" from="${[2016, 2017, 2018, 2019, 2020]}" value="${currentYear}"  noSelection="['':'']" onchange="updateAllApplicationsLink()"/>
+									</div>
+								</div>
+								<g:hiddenField name="status" value="" />
+							</g:form>
+							<hr/>
 							<ul>
-								<li class=""><a href="${createLink(uri: '/referralRecord/list')}"> All Applications</a></li>
-								<li class=""><g:link controller="referralRecord" action="filteredReferralListByStatus" params="['status': ReferralStatus.findByReferralStatusName('In progress')?.id]"> In Progress </g:link></li>
-								<li class=""><g:link controller="referralRecord" action="filteredReferralListByStatus" params="['status': ReferralStatus.findByReferralStatusName('Submitted')?.id]"> Submitted </g:link></li>
-								<li class=""><g:link controller="referralRecord" action="filteredReferralListByStatus" params="['status': ReferralStatus.findByReferralStatusName('Review Requested')?.id]"> Review Requested </g:link></li>
-								<li class=""><g:link controller="referralRecord" action="filteredReferralListByStatus" params="['status': ReferralStatus.findByReferralStatusName('Review Submitted')?.id]"> Review Submitted </g:link></li>
-								<li class=""><g:link controller="referralRecord" action="filteredReferralListByStatus" params="['status': ReferralStatus.findByReferralStatusName('Approved')?.id]"> Approved </g:link></li>
-								<li class=""><g:link controller="referralRecord" action="filteredReferralListByStatus" params="['status': ReferralStatus.findByReferralStatusName('Not Approved')?.id]"> Not Approved </g:link></li>
+								<li class=""><a id="link" href="${createLink(uri: '/referralRecord/list')}"> All Applications</a></li>
+								<li class=""><g:link controller="referralRecord" action="filteredReferralListByStatus" params="['status': 'In progress']"> In Progress </g:link></li>
+								<li class=""><a href="#" onclick="submitted()"> Submitted </a></li>
+								<li class=""><a href="#" onclick="reviewRequested()"> Review Requested </a></li>
+								<li class=""><a href="#" onclick="reviewSubmitted()"> Review Submitted </a></li>
+								<li class=""><a href="#" onclick="approved()"> Approved </a></li>
+								<li class=""><a href="#" onclick="notApproved()"> Not Approved </a></li>
+								<li class=""><a href="#" onclick="withdrawn()"> Withdrawn </a></li>
+								<li class=""><a href="#" onclick="suspended()"> Suspended </a></li>
 							</ul>
 						</div>
 					</div>
@@ -206,6 +225,46 @@
 		</section>
 	</div>
 </sec:ifAnyGranted>
+
+<content tag="javascript">
+	<script>
+		updateAllApplicationsLink();
+		function updateAllApplicationsLink(){
+			var selectedMonth = $("#month").val();
+			var selectedYear = $("#year").val();
+			$("#link").attr('href', '/RDMDT/referralRecord/list?month=' + selectedMonth + '&year=' + selectedYear)
+		}
+		function submitted(){
+			$("#status").val('Submitted');
+			document.getElementById('form').submit();
+		}
+		function reviewRequested(){
+			$("#status").val('Review Requested');
+			document.getElementById('form').submit();
+		}
+		function reviewSubmitted(){
+			$("#status").val('Review Submitted');
+			document.getElementById('form').submit();
+		}
+		function approved(){
+			$("#status").val('Approved');
+			document.getElementById('form').submit();
+		}
+		function notApproved(){
+			$("#status").val('Not Approved');
+			document.getElementById('form').submit();
+		}
+		function withdrawn(){
+			$("#status").val('Withdrawn');
+			document.getElementById('form').submit();
+		}
+		function suspended(){
+			$("#status").val('Suspended');
+			document.getElementById('form').submit();
+		}
+
+	</script>
+</content>
 
 </body>
 
