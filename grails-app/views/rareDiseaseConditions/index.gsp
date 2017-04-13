@@ -48,12 +48,6 @@
 	</div>
 </section>
 
-<g:form action="uploadFile" method="post" enctype="multipart/form-data">
-	<p class="text-success">Upload file</p>
-	<input type="file" name="file" id="file" />
-	<button type="submit" class="btn btn-success btn-xs" value="Upload"><span class="glyphicon glyphicon-upload"></span> Upload</button>
-</g:form>
-
 </body>
 
 </html>
