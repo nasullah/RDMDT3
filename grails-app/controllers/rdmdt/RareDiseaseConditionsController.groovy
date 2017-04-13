@@ -17,23 +17,24 @@ class RareDiseaseConditionsController {
 
     def index(Integer max) {
         params.max = Math.min(max ?: 10, 100)
-        respond RareDiseaseConditions.list(params), model: [rareDiseaseConditionsInstanceCount: RareDiseaseConditions.count()]
+        [rareDiseaseConditionsInstanceList: RareDiseaseConditions.list(params), rareDiseaseConditionsInstanceCount: RareDiseaseConditions.count()]
     }
 
     def list(Integer max) {
         params.max = Math.min(max ?: 10, 100)
-        respond RareDiseaseConditions.list(params), model: [rareDiseaseConditionsInstanceCount: RareDiseaseConditions.count()]
+        [rareDiseaseConditionsInstanceList: RareDiseaseConditions.list(params), rareDiseaseConditionsInstanceCount: RareDiseaseConditions.count()]
     }
 
     def show(RareDiseaseConditions rareDiseaseConditionsInstance) {
-        respond rareDiseaseConditionsInstance
+        [rareDiseaseConditionsInstance:rareDiseaseConditionsInstance]
     }
 
     def create() {
-        respond new RareDiseaseConditions(params)
+        [rareDiseaseConditionsInstance:new RareDiseaseConditions(params)]
     }
 
-    def uploadFile = {
+    @Transactional
+    def uploadFile () {
         if (!request.getFile('file').originalFilename) {
             flash.message = "Please choose a file"
             redirect(controller:'rareDiseaseConditions',action: 'index')
@@ -54,7 +55,7 @@ class RareDiseaseConditionsController {
         }
 
         if (rareDiseaseConditionsInstance.hasErrors()) {
-            respond rareDiseaseConditionsInstance.errors, view: 'create'
+            render view: 'create', model: [rareDiseaseConditionsInstance: rareDiseaseConditionsInstance]
             return
         }
 
@@ -70,7 +71,7 @@ class RareDiseaseConditionsController {
     }
 
     def edit(RareDiseaseConditions rareDiseaseConditionsInstance) {
-        respond rareDiseaseConditionsInstance
+        [rareDiseaseConditionsInstance:rareDiseaseConditionsInstance]
     }
 
     @Transactional
@@ -81,7 +82,7 @@ class RareDiseaseConditionsController {
         }
 
         if (rareDiseaseConditionsInstance.hasErrors()) {
-            respond rareDiseaseConditionsInstance.errors, view: 'edit'
+            render view: 'edit', model: [rareDiseaseConditionsInstance: rareDiseaseConditionsInstance]
             return
         }
 
