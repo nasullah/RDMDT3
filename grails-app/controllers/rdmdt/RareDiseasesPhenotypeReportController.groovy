@@ -17,7 +17,7 @@ class RareDiseasesPhenotypeReportController {
     }
 
     def show(RareDiseasesPhenotypeReport rareDiseasesPhenotypeReportInstance) {
-        respond rareDiseasesPhenotypeReportInstance
+        respond rareDiseasesPhenotypeReportInstance: rareDiseasesPhenotypeReportInstance
     }
 
     def create() {
@@ -34,59 +34,47 @@ class RareDiseasesPhenotypeReportController {
         [rareDiseasesPhenotypeReportInstanceList:rareDiseasesPhenotypeReportInstanceList]
     }
 
-    def savetest(){
-        print(params)
-        redirect action: "index", method: "GET"
+    @Transactional
+    def save(){
+        def referralRecord = ReferralRecord.findById(params.long('referralRecord'))
+        def rareDiseasesPhenotypeReportInstance = new RareDiseasesPhenotypeReport(referralRecord: referralRecord).save flush: true
+        def statementNumber = SpecificDisorders.findByOriginalId(referralRecord?.approvedTargetCategory?.originalId?.toString())?.shallowPhenotypes?.size()
+        for(int i = 0; i < statementNumber; i++){
+            def shallowPhenotypeIdentifier = params.find{it.key.equals('shallowPhenotypeIdentifier_'+ i)}?.value
+            def shallowPhenotypeHPOBuildNumber = params.find{it.key.equals('shallowPhenotypeHPOBuildNumber_'+ i)}?.value
+            def shallowPhenotypePresent = YesNoUnknown.findById(params.find{it.key.equals('shallowPhenotypePresent_'+ i)}?.value?.toString()?.toLong())
+            def shallowPhenotypeDescription = params.find{it.key.equals('shallowPhenotypeDescription_'+ i)}?.value
+            new Statement(identifier:shallowPhenotypeIdentifier, hpoBuildNumber:shallowPhenotypeHPOBuildNumber,
+                    present:shallowPhenotypePresent, description:shallowPhenotypeDescription, phenotyping:rareDiseasesPhenotypeReportInstance).save flush: true
+        }
+        flash.message = "Phenotype report has been created for application with Unique Ref ${referralRecord.uniqueRef}"
+        redirect(controller:'referralRecord',action: 'show', params: [id: rareDiseasesPhenotypeReportInstance.referralRecord.id])
     }
 
     @Transactional
-    def save(RareDiseasesPhenotypeReport rareDiseasesPhenotypeReportInstance) {
-        if (rareDiseasesPhenotypeReportInstance == null) {
-            notFound()
-            return
-        }
-
-        if (rareDiseasesPhenotypeReportInstance.hasErrors()) {
-            respond rareDiseasesPhenotypeReportInstance.errors, view: 'create'
-            return
-        }
-
-        rareDiseasesPhenotypeReportInstance.save flush: true
-
-        request.withFormat {
-            form multipartForm {
-                flash.message = message(code: 'default.created.message', args: [message(code: 'rareDiseasesPhenotypeReport.label', default: 'RareDiseasesPhenotypeReport'), rareDiseasesPhenotypeReportInstance.id])
-                redirect rareDiseasesPhenotypeReportInstance
+    def updateRecord(){
+        def rareDiseasesPhenotypeReportInstance = RareDiseasesPhenotypeReport.findById(params.long('rareDiseasesPhenotypeReportInstance'))
+        def statementNumber = SpecificDisorders.findByOriginalId(rareDiseasesPhenotypeReportInstance.referralRecord?.approvedTargetCategory?.originalId?.toString())?.shallowPhenotypes?.size()
+        for(int i = 0; i < statementNumber; i++){
+            def shallowPhenotypeIdentifier = params.find{it.key.equals('shallowPhenotypeIdentifier_'+ i)}?.value
+            def shallowPhenotypeHPOBuildNumber = params.find{it.key.equals('shallowPhenotypeHPOBuildNumber_'+ i)}?.value
+            def shallowPhenotypePresent = YesNoUnknown.findById(params.find{it.key.equals('shallowPhenotypePresent_'+ i)}?.value?.toString()?.toLong())
+            def shallowPhenotypeDescription = params.find{it.key.equals('shallowPhenotypeDescription_'+ i)}?.value
+            def statementInstance = Statement.findByIdentifier(shallowPhenotypeIdentifier?.toString())
+            if (statementInstance){
+                statementInstance.identifier = shallowPhenotypeIdentifier
+                statementInstance.hpoBuildNumber = shallowPhenotypeHPOBuildNumber
+                statementInstance.present = shallowPhenotypePresent
+                statementInstance.description = shallowPhenotypeDescription
+                statementInstance.save flush:true
             }
-            '*' { respond rareDiseasesPhenotypeReportInstance, [status: CREATED] }
         }
+        flash.message = "Phenotype report has been update for application with Unique Ref ${rareDiseasesPhenotypeReportInstance.referralRecord.uniqueRef}"
+        redirect(controller:'referralRecord',action: 'show', params: [id: rareDiseasesPhenotypeReportInstance.referralRecord.id])
     }
 
     def edit(RareDiseasesPhenotypeReport rareDiseasesPhenotypeReportInstance) {
-        respond rareDiseasesPhenotypeReportInstance
-    }
-
-    @Transactional
-    def update(RareDiseasesPhenotypeReport rareDiseasesPhenotypeReportInstance) {
-        if (rareDiseasesPhenotypeReportInstance == null) {
-            notFound()
-            return
-        }
-
-        if (rareDiseasesPhenotypeReportInstance.hasErrors()) {
-            respond rareDiseasesPhenotypeReportInstance.errors, view: 'edit'
-            return
-        }
-
-        rareDiseasesPhenotypeReportInstance.save flush: true
-
-        request.withFormat {
-            form multipartForm {
-                flash.message = message(code: 'default.updated.message', args: [message(code: 'RareDiseasesPhenotypeReport.label', default: 'RareDiseasesPhenotypeReport'), rareDiseasesPhenotypeReportInstance.id])
-                redirect rareDiseasesPhenotypeReportInstance
-            }
-            '*' { respond rareDiseasesPhenotypeReportInstance, [status: OK] }
-        }
+        respond rareDiseasesPhenotypeReportInstance: rareDiseasesPhenotypeReportInstance
     }
 
     @Transactional
@@ -101,8 +89,8 @@ class RareDiseasesPhenotypeReportController {
 
         request.withFormat {
             form multipartForm {
-                flash.message = message(code: 'default.deleted.message', args: [message(code: 'RareDiseasesPhenotypeReport.label', default: 'RareDiseasesPhenotypeReport'), rareDiseasesPhenotypeReportInstance.id])
-                redirect action: "index", method: "GET"
+                flash.message = "Phenotype report has been deleted for application with Unique Ref ${rareDiseasesPhenotypeReportInstance.referralRecord.uniqueRef}"
+                redirect(controller:'referralRecord',action: 'show', params: [id: rareDiseasesPhenotypeReportInstance.referralRecord.id])
             }
             '*' { render status: NO_CONTENT }
         }
@@ -112,7 +100,7 @@ class RareDiseasesPhenotypeReportController {
         request.withFormat {
             form multipartForm {
                 flash.message = message(code: 'default.not.found.message', args: [message(code: 'rareDiseasesPhenotypeReport.label', default: 'RareDiseasesPhenotypeReport'), params.id])
-                redirect action: "index", method: "GET"
+                redirect(controller:'referralRecord',action: 'show', params: [id: rareDiseasesPhenotypeReportInstance.referralRecord.id])
             }
             '*' { render status: NOT_FOUND }
         }

@@ -1,46 +1,80 @@
-
-<%@ page import="rdmdt.RareDiseasesPhenotypeReport" %>
+<%@ page import="rdmdt.YesNoUnknown; rdmdt.RareDiseasesPhenotypeReport" %>
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta name="layout" content="main">
-		<g:set var="entityName" value="${message(code: 'rareDiseasesPhenotypeReport.label', default: 'RareDiseasesPhenotypeReport')}" />
-		<title><g:message code="default.show.label" args="[entityName]" /></title>
-	</head>
-	<body>
-		<a href="#show-rareDiseasesPhenotypeReport" class="skip" tabindex="-1"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
-		<div class="nav" role="navigation">
-			<ul>
-				<li><a class="home" href="${createLink(uri: '/')}"><g:message code="default.home.label"/></a></li>
-				<li><g:link class="list" action="index"><g:message code="default.list.label" args="[entityName]" /></g:link></li>
-				<li><g:link class="create" action="create"><g:message code="default.new.label" args="[entityName]" /></g:link></li>
-			</ul>
+
+<head>
+	<meta name="layout" content="main" />
+	<h2><center>Show Phenotype Report</center></h2>
+</head>
+
+<body>
+
+<h4>Application unique ref: ${rareDiseasesPhenotypeReportInstance?.referralRecord?.uniqueRef}</h4>
+<br/>
+
+<form>
+	<div class="form-group row">
+		<label class="col-sm-2 col-form-label">Disease Group:</label>
+		<div class="col-sm-6">
+			<input type="text" class="form-control" value="${rareDiseasesPhenotypeReportInstance?.referralRecord?.approvedTargetCategory?.diseaseGroup}" disabled="">
 		</div>
-		<div id="show-rareDiseasesPhenotypeReport" class="content scaffold-show" role="main">
-			<h1><g:message code="default.show.label" args="[entityName]" /></h1>
-			<g:if test="${flash.message}">
-			<div class="message" role="status">${flash.message}</div>
-			</g:if>
-			<ol class="property-list rareDiseasesPhenotypeReport">
-			
-				<g:if test="${rareDiseasesPhenotypeReportInstance?.statements}">
-				<li class="fieldcontain">
-					<span id="statements-label" class="property-label"><g:message code="rareDiseasesPhenotypeReport.statements.label" default="Statements" /></span>
-					
-						<g:each in="${rareDiseasesPhenotypeReportInstance.statements}" var="s">
-						<span class="property-value" aria-labelledby="statements-label"><g:link controller="statement" action="show" id="${s.id}">${s?.encodeAsHTML()}</g:link></span>
-						</g:each>
-					
-				</li>
-				</g:if>
-			
-			</ol>
-			<g:form url="[resource:rareDiseasesPhenotypeReportInstance, action:'delete']" method="DELETE">
-				<fieldset class="buttons">
-					<g:link class="edit" action="edit" resource="${rareDiseasesPhenotypeReportInstance}"><g:message code="default.button.edit.label" default="Edit" /></g:link>
-					<g:actionSubmit class="delete" action="delete" value="${message(code: 'default.button.delete.label', default: 'Delete')}" onclick="return confirm('${message(code: 'default.button.delete.confirm.message', default: 'Are you sure?')}');" />
-				</fieldset>
-			</g:form>
+	</div>
+</form>
+<form>
+	<div class="form-group row">
+		<label class="col-sm-2 col-form-label">Disease Sub Group:</label>
+		<div class="col-sm-6">
+			<input type="text" class="form-control" value="${rareDiseasesPhenotypeReportInstance?.referralRecord?.approvedTargetCategory?.diseaseSubgroup}" disabled="">
 		</div>
-	</body>
+	</div>
+</form>
+<form>
+	<div class="form-group row">
+		<label class="col-sm-2 col-form-label">Specific Disease:</label>
+		<div class="col-sm-6">
+			<input type="text" class="form-control" value="${rareDiseasesPhenotypeReportInstance?.referralRecord?.approvedTargetCategory?.diseaseName}" disabled="">
+		</div>
+	</div>
+</form>
+
+<section id="index-rareDiseasesPhenotypeReport" class="first">
+
+	<g:form role="form" >
+		<table class="table table-bordered margin-top-medium">
+			<thead>
+			<tr>
+				<th>Phenotype Description</th>
+				<th>Phenotype Identifier</th>
+				<th>HPO Build Number</th>
+				<th>Phenotype Present</th>
+			</tr>
+			</thead>
+
+			<tbody>
+
+			<g:each in="${rareDiseasesPhenotypeReportInstance?.statements?.sort{it.identifier}}" status="i" var="statementInstance">
+				<tr class="${(i % 2) == 0 ? 'odd' : 'even'}">
+					<td style='vertical-align:middle'>${fieldValue(bean: statementInstance, field: "description")}</td>
+					<td style='vertical-align:middle'>${fieldValue(bean: statementInstance, field: "identifier")}</td>
+					<td style='vertical-align:middle'>${fieldValue(bean: statementInstance, field: "hpoBuildNumber")}</td>
+					<td>
+						<g:radioGroup name="${statementInstance.id}"
+									  labels="['Yes','No','Unknown']"
+									  values="[YesNoUnknown.findByYesNoUnknownName('Yes')?.id, YesNoUnknown.findByYesNoUnknownName('No')?.id, YesNoUnknown.findByYesNoUnknownName('Unknown')?.id]"
+									  value="${statementInstance?.present?.id}"
+									  disabled='disabled'>
+							<p> ${it.radio}  &nbsp; ${it.label}</p>
+						</g:radioGroup>
+					</td>
+
+				</tr>
+			</g:each>
+			</tbody>
+		</table>
+	</g:form>
+
+</section>
+
+</body>
+
 </html>

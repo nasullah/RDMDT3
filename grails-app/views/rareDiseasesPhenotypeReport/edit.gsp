@@ -1,41 +1,84 @@
-<%@ page import="rdmdt.RareDiseasesPhenotypeReport" %>
+<%@ page import="rdmdt.YesNoUnknown; rdmdt.RareDiseasesPhenotypeReport" %>
 <!DOCTYPE html>
 <html>
 	<head>
-		<meta name="layout" content="main">
-		<g:set var="entityName" value="${message(code: 'rareDiseasesPhenotypeReport.label', default: 'RareDiseasesPhenotypeReport')}" />
-		<title><g:message code="default.edit.label" args="[entityName]" /></title>
+		<meta name="layout" content="main" />
+		<h2><center>Edit Phenotype Report</center></h2>
 	</head>
 	<body>
-		<a href="#edit-rareDiseasesPhenotypeReport" class="skip" tabindex="-1"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
-		<div class="nav" role="navigation">
-			<ul>
-				<li><a class="home" href="${createLink(uri: '/')}"><g:message code="default.home.label"/></a></li>
-				<li><g:link class="list" action="index"><g:message code="default.list.label" args="[entityName]" /></g:link></li>
-				<li><g:link class="create" action="create"><g:message code="default.new.label" args="[entityName]" /></g:link></li>
-			</ul>
+
+	<h4>Application unique ref: ${rareDiseasesPhenotypeReportInstance?.referralRecord?.uniqueRef}</h4>
+	<br/>
+
+	<form>
+		<div class="form-group row">
+			<label class="col-sm-2 col-form-label">Disease Group:</label>
+			<div class="col-sm-6">
+				<input type="text" class="form-control" value="${rareDiseasesPhenotypeReportInstance?.referralRecord?.approvedTargetCategory?.diseaseGroup}" disabled="">
+			</div>
 		</div>
-		<div id="edit-rareDiseasesPhenotypeReport" class="content scaffold-edit" role="main">
-			<h1><g:message code="default.edit.label" args="[entityName]" /></h1>
-			<g:if test="${flash.message}">
-			<div class="message" role="status">${flash.message}</div>
-			</g:if>
-			<g:hasErrors bean="${rareDiseasesPhenotypeReportInstance}">
-			<ul class="errors" role="alert">
-				<g:eachError bean="${rareDiseasesPhenotypeReportInstance}" var="error">
-				<li <g:if test="${error in org.springframework.validation.FieldError}">data-field-id="${error.field}"</g:if>><g:message error="${error}"/></li>
-				</g:eachError>
-			</ul>
-			</g:hasErrors>
-			<g:form url="[resource:rareDiseasesPhenotypeReportInstance, action:'update']" method="PUT" >
-				<g:hiddenField name="version" value="${rareDiseasesPhenotypeReportInstance?.version}" />
-				<fieldset class="form">
-					<g:render template="form"/>
-				</fieldset>
-				<fieldset class="buttons">
-					<g:actionSubmit class="save" action="update" value="${message(code: 'default.button.update.label', default: 'Update')}" />
-				</fieldset>
-			</g:form>
+	</form>
+	<form>
+		<div class="form-group row">
+			<label class="col-sm-2 col-form-label">Disease Sub Group:</label>
+			<div class="col-sm-6">
+				<input type="text" class="form-control" value="${rareDiseasesPhenotypeReportInstance?.referralRecord?.approvedTargetCategory?.diseaseSubgroup}" disabled="">
+			</div>
 		</div>
+	</form>
+	<form>
+		<div class="form-group row">
+			<label class="col-sm-2 col-form-label">Specific Disease:</label>
+			<div class="col-sm-6">
+				<input type="text" class="form-control" value="${rareDiseasesPhenotypeReportInstance?.referralRecord?.approvedTargetCategory?.diseaseName}" disabled="">
+			</div>
+		</div>
+	</form>
+
+	<section id="index-rareDiseasesPhenotypeReport" class="first">
+
+		<g:form action="updateRecord" class="form-horizontal" role="form" >
+			<g:hiddenField name="referralRecord" value="${rareDiseasesPhenotypeReportInstance?.referralRecord?.id}" />
+			<g:hiddenField name="rareDiseasesPhenotypeReportInstance" value="${rareDiseasesPhenotypeReportInstance?.id}" />
+			<table class="table table-bordered margin-top-medium">
+				<thead>
+				<tr>
+					<th>Phenotype Description</th>
+					<th>Phenotype Identifier</th>
+					<th>HPO Build Number</th>
+					<th>Phenotype Present</th>
+				</tr>
+				</thead>
+
+				<tbody>
+
+				<g:each in="${rareDiseasesPhenotypeReportInstance?.statements?.sort{it.identifier}}" status="i" var="statementInstance">
+					<tr class="${(i % 2) == 0 ? 'odd' : 'even'}">
+						<td style='vertical-align:middle'>${fieldValue(bean: statementInstance, field: "description")}</td>
+						<td style='vertical-align:middle'>${fieldValue(bean: statementInstance, field: "identifier")}</td>
+						<td style='vertical-align:middle'>${fieldValue(bean: statementInstance, field: "hpoBuildNumber")}</td>
+						<g:hiddenField name="shallowPhenotypeIdentifier_${i}" value="${statementInstance?.identifier}" />
+						<g:hiddenField name="shallowPhenotypeDescription_${i}" value="${statementInstance?.description}" />
+						<g:hiddenField name="shallowPhenotypeHPOBuildNumber_${i}" value="${statementInstance?.hpoBuildNumber}" />
+						<td>
+							<g:radioGroup name="shallowPhenotypePresent_${i}"
+										  labels="['Yes','No','Unknown']"
+										  values="[YesNoUnknown.findByYesNoUnknownName('Yes')?.id, YesNoUnknown.findByYesNoUnknownName('No')?.id, YesNoUnknown.findByYesNoUnknownName('Unknown')?.id]"
+										  value="${statementInstance?.present?.id}">
+								<p> ${it.radio}  &nbsp; ${it.label}</p>
+							</g:radioGroup>
+						</td>
+
+					</tr>
+				</g:each>
+				</tbody>
+			</table>
+			<div class="form-actions margin-top-medium">
+				<g:submitButton name="create" class="btn btn-primary" value="Update" />
+				<button class="btn" type="reset">Reset</button>
+			</div>
+		</g:form>
+
+	</section>
 	</body>
 </html>

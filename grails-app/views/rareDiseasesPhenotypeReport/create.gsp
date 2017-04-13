@@ -5,12 +5,12 @@
 
 <head>
 	<meta name="layout" content="main" />
-	<h2><center>Rare Diseases Phenotypes</center></h2>
+	<h2><center>Create Phenotype Report</center></h2>
 </head>
 
 <body>
 
-<h4>${rareDiseasesPhenotypeReportInstance.referralRecord}</h4>
+<h4>Application unique ref: ${rareDiseasesPhenotypeReportInstance?.referralRecord?.uniqueRef}</h4>
 <br/>
 
 <form>
@@ -40,8 +40,8 @@
 
 <section id="index-rareDiseasesPhenotypeReport" class="first">
 
-	<g:form action="savetest" class="form-horizontal" role="form" >
-		<g:hiddenField name="referralRecord" value="${rareDiseasesPhenotypeReportInstance.referralRecord}" />
+	<g:form action="save" class="form-horizontal" role="form" >
+		<g:hiddenField name="referralRecord" value="${rareDiseasesPhenotypeReportInstance?.referralRecord?.id}" />
 		<table class="table table-bordered margin-top-medium">
 			<thead>
 			<tr>
@@ -54,16 +54,19 @@
 
 			<tbody>
 
-			<g:each in="${specificDisease?.shallowPhenotypes}" status="i" var="rareDiseasesPhenotypeReportInstance">
+			<g:each in="${specificDisease?.shallowPhenotypes?.sort{it.originalId}}" status="i" var="shallowPhenotypeInstance">
 				<tr class="${(i % 2) == 0 ? 'odd' : 'even'}">
-					<td style='vertical-align:middle'>${fieldValue(bean: rareDiseasesPhenotypeReportInstance, field: "name")}</td>
-					<td style='vertical-align:middle'>${fieldValue(bean: rareDiseasesPhenotypeReportInstance, field: "originalId")}</td>
+					<td style='vertical-align:middle'>${fieldValue(bean: shallowPhenotypeInstance, field: "name")}</td>
+					<td style='vertical-align:middle'>${fieldValue(bean: shallowPhenotypeInstance, field: "originalId")}</td>
 					<td style='vertical-align:middle'>OBO-Edit 2.3</td>
+					<g:hiddenField name="shallowPhenotypeIdentifier_${i}" value="${shallowPhenotypeInstance?.originalId}" />
+					<g:hiddenField name="shallowPhenotypeDescription_${i}" value="${shallowPhenotypeInstance?.name}" />
+					<g:hiddenField name="shallowPhenotypeHPOBuildNumber_${i}" value="OBO-Edit 2.3" />
 					<td>
-						<g:radioGroup name="${rareDiseasesPhenotypeReportInstance.id}"
+						<g:radioGroup name="shallowPhenotypePresent_${i}"
 									  labels="['Yes','No','Unknown']"
-									  values="[rdmdt.YesNoUnknown.findByYesNoUnknownName('Yes')?.id, rdmdt.YesNoUnknown.findByYesNoUnknownName('No')?.id, rdmdt.YesNoUnknown.findByYesNoUnknownName('Unknown')?.id]"
-									  value="${rdmdt.YesNoUnknown.findByYesNoUnknownName('Unknown')?.id}">
+									  values="[YesNoUnknown.findByYesNoUnknownName('Yes')?.id, YesNoUnknown.findByYesNoUnknownName('No')?.id, YesNoUnknown.findByYesNoUnknownName('Unknown')?.id]"
+									  value="${YesNoUnknown.findByYesNoUnknownName('Unknown')?.id}">
 							<p> ${it.radio}  &nbsp; ${it.label}</p>
 						</g:radioGroup>
 					</td>
