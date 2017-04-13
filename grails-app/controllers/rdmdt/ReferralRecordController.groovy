@@ -10,6 +10,10 @@ import org.grails.core.io.ResourceLocator
 
 //import org.codehaus.groovy.grails.web.context.ServletContextHolder
 import org.grails.plugins.filterpane.FilterPaneUtils
+
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+
 import static org.springframework.http.HttpStatus.*
 import grails.transaction.Transactional
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage
@@ -23,6 +27,7 @@ class ReferralRecordController {
 
     def filterPaneService
     def springSecurityService
+    def wordProcessingService
     static allowedMethods = [save: "POST", update: ["PUT", "POST"], delete: "DELETE"]
 
     def index(Integer max) {
@@ -30,2798 +35,58 @@ class ReferralRecordController {
         respond ReferralRecord.list(params).sort {it?.referralStatus?.referralStatusName}, model: [referralRecordInstanceCount: ReferralRecord.count()]
     }
 
-//    def exportWord = {
-//        def referralRecordInstance = ReferralRecord.findById(params.long('referralRecordId'))
-//        wordProcessingService.processingWordDocument(referralRecordInstance)
-//    }
-
-
     def exportWord = {
         def referralRecordInstance = ReferralRecord.findById(params.long('referralRecordId'))
-        WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.createPackage()
-        def mainPart = wordMLPackage.getMainDocumentPart()
-        def title = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:pPr>\n" +
-                "                        <w:jc w:val=\"center\"/>\n" +
-                "                        <w:rPr>\n" +
-                "                            <w:rFonts w:ascii=\"Calibri\" w:hAnsi=\"Calibri\" w:cs=\"Calibri\"/>\n" +
-                "                            <w:b/>\n" +
-                "                            <w:sz w:val=\"22\"/>\n" +
-                "                            <w:szCs w:val=\"22\"/>\n" +
-                "                            <w:u w:val=\"single\"/>\n" +
-                "                        </w:rPr>\n" +
-                "                    </w:pPr>\n" +
-                "                    <w:r>\n" +
-                "                        <w:rPr>\n" +
-                "                        <w:jc w:val=\"center\"/>\n" +
-                "                            <w:rFonts w:ascii=\"Calibri\" w:hAnsi=\"Calibri\" w:cs=\"Calibri\"/>\n" +
-                "                            <w:b/>\n" +
-                "                            <w:sz w:val=\"22\"/>\n" +
-                "                            <w:szCs w:val=\"22\"/>\n" +
-                "                            <w:u w:val=\"single\"/>\n" +
-                "                        </w:rPr>\n" +
-                "                        <w:t>CLINICAL GENOMIC SEQUENCING APPLICATION FORM </w:t>\n" +
-                "                    </w:r>\n" +
-                "                </w:p>";
-
-        def monthYear = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:pPr>\n" +
-                "                        <w:jc w:val=\"center\"/>\n" +
-                "                        <w:rPr>\n" +
-                "                            <w:rFonts w:ascii=\"Calibri\" w:hAnsi=\"Calibri\" w:eastAsia=\"Calibri\" w:cs=\"Calibri\"/>\n" +
-                "                            <w:b/>\n" +
-                "                            <w:u w:val=\"single\"/>\n" +
-                "                        </w:rPr>\n" +
-                "                    </w:pPr>\n" +
-                "                    <w:r>\n" +
-                "                        <w:rPr>\n" +
-                "                            <w:rFonts w:ascii=\"Calibri\" w:hAnsi=\"Calibri\" w:eastAsia=\"Calibri\" w:cs=\"Calibri\"/>\n" +
-                "                            <w:b/>\n" +
-                "                            <w:u w:val=\"single\"/>\n" +
-                "                        </w:rPr>\n" +
-                "                        <w:lastRenderedPageBreak/>\n" +
-                "                        <w:t xml:space=\"preserve\">June 2016</w:t>\n" +
-                "                    </w:r>\n" +
-                "                </w:p>";
-
-        def applicantInformation = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:pPr>\n" +
-                "                        <w:spacing w:after=\"120\"/>\n" +
-                "                        <w:rPr>\n" +
-                "                            <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                            <w:b/>\n" +
-                "                            <w:sz w:val=\"22\"/>\n" +
-                "                            <w:szCs w:val=\"22\"/>\n" +
-                "                            <w:u w:val=\"single\"/>\n" +
-                "                        </w:rPr>\n" +
-                "                    </w:pPr>\n" +
-                "                    <w:proofErr w:type=\"gramStart\"/>\n" +
-                "                    <w:r>\n" +
-                "                        <w:rPr>\n" +
-                "                            <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                            <w:b/>\n" +
-                "                            <w:sz w:val=\"22\"/>\n" +
-                "                            <w:szCs w:val=\"22\"/>\n" +
-                "                            <w:u w:val=\"single\"/>\n" +
-                "                        </w:rPr>\n" +
-                "                        <w:t>Applicant Information</w:t>\n" +
-                "                    </w:r>\n" +
-                "                </w:p>";
-
-        def clinician = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\">\n" +
-                "                    <w:pPr>\n" +
-                "                        <w:spacing w:after=\"120\"/>\n" +
-                "                        <w:rPr>\n" +
-                "                            <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                            <w:sz w:val=\"21\"/>\n" +
-                "                            <w:szCs w:val=\"21\"/>\n" +
-                "                        </w:rPr>\n" +
-                "                    </w:pPr>\n" +
-                "                    <w:r>\n" +
-                "                        <w:rPr>\n" +
-                "                            <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                            <w:sz w:val=\"21\"/>\n" +
-                "                            <w:szCs w:val=\"21\"/>\n" +
-                "                        </w:rPr>\n" +
-                "                        <w:t xml:space=\"preserve\">Applicant: ${referralRecordInstance.clinician.forename.toString()} ${referralRecordInstance.clinician.surname.toString()}</w:t>\n" +
-                "                    </w:r>\n" +
-                "                </w:p>"
-
-        def responsibleConsultant = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\">\n" +
-                "                    <w:pPr>\n" +
-                "                        <w:spacing w:after=\"120\"/>\n" +
-                "                        <w:rPr>\n" +
-                "                            <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                            <w:sz w:val=\"21\"/>\n" +
-                "                            <w:szCs w:val=\"21\"/>\n" +
-                "                        </w:rPr>\n" +
-                "                    </w:pPr>\n" +
-                "                    <w:r>\n" +
-                "                        <w:rPr>\n" +
-                "                            <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                            <w:sz w:val=\"21\"/>\n" +
-                "                            <w:szCs w:val=\"21\"/>\n" +
-                "                        </w:rPr>\n" +
-                "                        <w:t xml:space=\"preserve\">Responsible Consultant: ${referralRecordInstance.correspondingClinician.forename.toString()} ${referralRecordInstance.correspondingClinician.surname.toString()}</w:t>\n" +
-                "                    </w:r>\n" +
-                "                </w:p>"
-
-        def coApplicants = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\">\n" +
-                "                    <w:pPr>\n" +
-                "                        <w:spacing w:after=\"120\"/>\n" +
-                "                        <w:rPr>\n" +
-                "                            <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                            <w:sz w:val=\"21\"/>\n" +
-                "                            <w:szCs w:val=\"21\"/>\n" +
-                "                        </w:rPr>\n" +
-                "                    </w:pPr>\n" +
-                "                    <w:r>\n" +
-                "                        <w:rPr>\n" +
-                "                            <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                            <w:sz w:val=\"21\"/>\n" +
-                "                            <w:szCs w:val=\"21\"/>\n" +
-                "                        </w:rPr>\n" +
-                "                        <w:t xml:space=\"preserve\">Co Applicants: ${referralRecordInstance.coApplicants.each{coApp -> coApp.coApplicant?.forename?.toString() + ' ' + coApp?.coApplicant?.surname?.toString() + ', '}?.toString()?.replace('[','')?.toString()?.replace(']','')}</w:t>\n" +
-                "                    </w:r>\n" +
-                "                </w:p>"
-
-        def probandInformation = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:pPr>\n" +
-                "                        <w:spacing w:after=\"120\"/>\n" +
-                "                        <w:rPr>\n" +
-                "                            <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                            <w:b/>\n" +
-                "                            <w:sz w:val=\"22\"/>\n" +
-                "                            <w:szCs w:val=\"22\"/>\n" +
-                "                            <w:u w:val=\"single\"/>\n" +
-                "                        </w:rPr>\n" +
-                "                    </w:pPr>\n" +
-                "                    <w:proofErr w:type=\"gramStart\"/>\n" +
-                "                    <w:r>\n" +
-                "                        <w:rPr>\n" +
-                "                            <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                            <w:b/>\n" +
-                "                            <w:sz w:val=\"22\"/>\n" +
-                "                            <w:szCs w:val=\"22\"/>\n" +
-                "                            <w:u w:val=\"single\"/>\n" +
-                "                        </w:rPr>\n" +
-                "                        <w:t>Proband Information</w:t>\n" +
-                "                    </w:r>\n" +
-                "                </w:p>";
-        def probandDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:tblPr>\n" +
-                "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                "                        <w:tblBorders>\n" +
-                "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                        </w:tblBorders>\n" +
-                "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                        <w:tblCellMar>\n" +
-                "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                        </w:tblCellMar>\n" +
-                "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                "                    </w:tblPr>\n" +
-                "                    <w:tblGrid>\n" +
-                "                        <w:gridCol w:w=\"9144\"/>\n" +
-                "                    </w:tblGrid>\n" +
-                "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                "                        <w:trPr>\n" +
-                "                            <w:trHeight w:val=\"1\"/>\n" +
-                "                        </w:trPr>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Unique reference: ${referralRecordInstance.uniqueRef}</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Age: ${referralRecordInstance.patients?.find{p -> p.isProband}?.age ?: ''} ${referralRecordInstance.patients?.find{p -> p.isProband}?.ageUnit ?: ''}</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Gender: ${referralRecordInstance.patients?.find{p -> p.isProband}?.gender ?: ''}</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t>Ethnicity: ${referralRecordInstance.patients?.find{p -> p.isProband}?.ethnicity ?: ''}</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                    </w:tr>\n" +
-                "                </w:tbl>"
-
-        def clinicalInformation = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:pPr>\n" +
-                "                        <w:spacing w:after=\"120\"/>\n" +
-                "                        <w:rPr>\n" +
-                "                            <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                            <w:b/>\n" +
-                "                            <w:sz w:val=\"22\"/>\n" +
-                "                            <w:szCs w:val=\"22\"/>\n" +
-                "                            <w:u w:val=\"single\"/>\n" +
-                "                        </w:rPr>\n" +
-                "                    </w:pPr>\n" +
-                "                    <w:proofErr w:type=\"gramStart\"/>\n" +
-                "                    <w:r>\n" +
-                "                        <w:rPr>\n" +
-                "                            <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                            <w:b/>\n" +
-                "                            <w:sz w:val=\"22\"/>\n" +
-                "                            <w:szCs w:val=\"22\"/>\n" +
-                "                            <w:u w:val=\"single\"/>\n" +
-                "                        </w:rPr>\n" +
-                "                        <w:t>Clinical Information</w:t>\n" +
-                "                    </w:r>\n" +
-                "                </w:p>";
-
-        def disorderName = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:tblPr>\n" +
-                "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                "                        <w:tblBorders>\n" +
-                "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                        </w:tblBorders>\n" +
-                "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                        <w:tblCellMar>\n" +
-                "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                        </w:tblCellMar>\n" +
-                "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                "                    </w:tblPr>\n" +
-                "                    <w:tblGrid>\n" +
-                "                        <w:gridCol w:w=\"9144\"/>\n" +
-                "                    </w:tblGrid>\n" +
-                "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                "                        <w:trPr>\n" +
-                "                            <w:trHeight w:val=\"1\"/>\n" +
-                "                        </w:trPr>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Name or brief description of disorder: ${referralRecordInstance?.disorderName ?: ''}</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Age of onset: ${referralRecordInstance?.ageOfSymptoms ?: ''} ${referralRecordInstance?.symptomEgeUnit ?: ''}</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                    </w:tr>\n" +
-                "                </w:tbl>"
-
-        def clinicalDetails = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Clinical Details:</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>"
-
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(title));
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(monthYear));
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(applicantInformation));
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(clinician));
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(responsibleConsultant));
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(coApplicants));
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(probandInformation));
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(probandDetails));
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(clinicalInformation));
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(disorderName));
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(clinicalDetails));
-
-        referralRecordInstance.clinicalDetails.sort {it.id}.each {
-            def clinicalDetailsItems = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                    "                    <w:tblPr>\n" +
-                    "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                    "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                    "                        <w:tblBorders>\n" +
-                    "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                        </w:tblBorders>\n" +
-                    "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                        <w:tblCellMar>\n" +
-                    "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                        </w:tblCellMar>\n" +
-                    "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                    "                    </w:tblPr>\n" +
-                    "                    <w:tblGrid>\n" +
-                    "                        <w:gridCol w:w=\"9144\"/>\n" +
-                    "                    </w:tblGrid>\n" +
-                    "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                    "                        <w:trPr>\n" +
-                    "                            <w:trHeight w:val=\"1\"/>\n" +
-                    "                        </w:trPr>\n" +
-                    "                        <w:tc>\n" +
-                    "                            <w:tcPr>\n" +
-                    "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                    "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                                <w:tcMar>\n" +
-                    "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                </w:tcMar>\n" +
-                    "                            </w:tcPr>\n" +
-                    "                            <w:p>\n" +
-                    "                                <w:pPr>\n" +
-                    "                                    <w:spacing w:after=\"120\"/>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                </w:pPr>\n" +
-                    "                                <w:r>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                    <w:t xml:space=\"preserve\"> ${it}</w:t>\n" +
-                    "                                </w:r>\n" +
-                    "                            </w:p>\n" +
-                    "                        </w:tc>\n" +
-                    "                    </w:tr>\n" +
-                    "                </w:tbl>"
-            mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(clinicalDetailsItems));
-        }
-
-        def geneticTesting = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Genetic Testing (chromosome analysis, single gene, gene panel, etc.)</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>"
-
-        def geneticTestingDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:tblPr>\n" +
-                "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                "                        <w:tblBorders>\n" +
-                "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                        </w:tblBorders>\n" +
-                "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                        <w:tblCellMar>\n" +
-                "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                        </w:tblCellMar>\n" +
-                "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                "                    </w:tblPr>\n" +
-                "                    <w:tblGrid>\n" +
-                "                        <w:gridCol w:w=\"9144\"/>\n" +
-                "                    </w:tblGrid>\n" +
-                "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                "                        <w:trPr>\n" +
-                "                            <w:trHeight w:val=\"1\"/>\n" +
-                "                        </w:trPr>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\"> ${referralRecordInstance?.geneticTestingOnProband ?: ''}</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                    </w:tr>\n" +
-                "                </w:tbl>"
-
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(geneticTesting));
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(geneticTestingDetails));
-
-        def otherTesting = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Other testing on proband (metabolic, nerve conduction, muscle/skin biopsy, etc.)</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>"
-
-        def otherTestingDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:tblPr>\n" +
-                "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                "                        <w:tblBorders>\n" +
-                "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                        </w:tblBorders>\n" +
-                "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                        <w:tblCellMar>\n" +
-                "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                        </w:tblCellMar>\n" +
-                "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                "                    </w:tblPr>\n" +
-                "                    <w:tblGrid>\n" +
-                "                        <w:gridCol w:w=\"9144\"/>\n" +
-                "                    </w:tblGrid>\n" +
-                "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                "                        <w:trPr>\n" +
-                "                            <w:trHeight w:val=\"1\"/>\n" +
-                "                        </w:trPr>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\"> ${referralRecordInstance?.otherTestingOnProband ?: ''}</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                    </w:tr>\n" +
-                "                </w:tbl>"
-
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(otherTesting));
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(otherTestingDetails));
-
-        def arrayCGH = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Has arrayCGH been performed?</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>"
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(arrayCGH));
-        if (referralRecordInstance?.arrayCGH){
-            def arrayCGHDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                    "                    <w:tblPr>\n" +
-                    "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                    "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                    "                        <w:tblBorders>\n" +
-                    "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                        </w:tblBorders>\n" +
-                    "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                        <w:tblCellMar>\n" +
-                    "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                        </w:tblCellMar>\n" +
-                    "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                    "                    </w:tblPr>\n" +
-                    "                    <w:tblGrid>\n" +
-                    "                        <w:gridCol w:w=\"9144\"/>\n" +
-                    "                    </w:tblGrid>\n" +
-                    "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                    "                        <w:trPr>\n" +
-                    "                            <w:trHeight w:val=\"1\"/>\n" +
-                    "                        </w:trPr>\n" +
-                    "                        <w:tc>\n" +
-                    "                            <w:tcPr>\n" +
-                    "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                    "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                                <w:tcMar>\n" +
-                    "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                </w:tcMar>\n" +
-                    "                            </w:tcPr>\n" +
-                    "                            <w:p>\n" +
-                    "                                <w:pPr>\n" +
-                    "                                    <w:spacing w:after=\"120\"/>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                </w:pPr>\n" +
-                    "                                <w:r>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                    <w:t xml:space=\"preserve\"> Yes, ${referralRecordInstance?.arrayCGHDetails ?: ''}</w:t>\n" +
-                    "                                </w:r>\n" +
-                    "                            </w:p>\n" +
-                    "                        </w:tc>\n" +
-                    "                    </w:tr>\n" +
-                    "                </w:tbl>"
-            mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(arrayCGHDetails));
-        }else {
-            def arrayCGHDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                    "                    <w:tblPr>\n" +
-                    "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                    "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                    "                        <w:tblBorders>\n" +
-                    "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                        </w:tblBorders>\n" +
-                    "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                        <w:tblCellMar>\n" +
-                    "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                        </w:tblCellMar>\n" +
-                    "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                    "                    </w:tblPr>\n" +
-                    "                    <w:tblGrid>\n" +
-                    "                        <w:gridCol w:w=\"9144\"/>\n" +
-                    "                    </w:tblGrid>\n" +
-                    "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                    "                        <w:trPr>\n" +
-                    "                            <w:trHeight w:val=\"1\"/>\n" +
-                    "                        </w:trPr>\n" +
-                    "                        <w:tc>\n" +
-                    "                            <w:tcPr>\n" +
-                    "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                    "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                                <w:tcMar>\n" +
-                    "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                </w:tcMar>\n" +
-                    "                            </w:tcPr>\n" +
-                    "                            <w:p>\n" +
-                    "                                <w:pPr>\n" +
-                    "                                    <w:spacing w:after=\"120\"/>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                </w:pPr>\n" +
-                    "                                <w:r>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                    <w:t xml:space=\"preserve\"> No </w:t>\n" +
-                    "                                </w:r>\n" +
-                    "                            </w:p>\n" +
-                    "                        </w:tc>\n" +
-                    "                    </w:tr>\n" +
-                    "                </w:tbl>"
-            mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(arrayCGHDetails));
-        }
-
-        def familyInformation = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:pPr>\n" +
-                "                        <w:spacing w:after=\"120\"/>\n" +
-                "                        <w:rPr>\n" +
-                "                            <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                            <w:b/>\n" +
-                "                            <w:sz w:val=\"22\"/>\n" +
-                "                            <w:szCs w:val=\"22\"/>\n" +
-                "                            <w:u w:val=\"single\"/>\n" +
-                "                        </w:rPr>\n" +
-                "                    </w:pPr>\n" +
-                "                    <w:proofErr w:type=\"gramStart\"/>\n" +
-                "                    <w:r>\n" +
-                "                        <w:rPr>\n" +
-                "                            <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                            <w:b/>\n" +
-                "                            <w:sz w:val=\"22\"/>\n" +
-                "                            <w:szCs w:val=\"22\"/>\n" +
-                "                            <w:u w:val=\"single\"/>\n" +
-                "                        </w:rPr>\n" +
-                "                        <w:t>Family Information</w:t>\n" +
-                "                    </w:r>\n" +
-                "                </w:p>";
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(familyInformation));
-
-
-        def otherFamilyMembersAffected  = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Are any other family members affected with the same or related condition?</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>"
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(otherFamilyMembersAffected));
-        if (referralRecordInstance?.otherFamilyMembersAffected){
-            def otherFamilyMembersAffectedDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                    "                    <w:tblPr>\n" +
-                    "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                    "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                    "                        <w:tblBorders>\n" +
-                    "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                        </w:tblBorders>\n" +
-                    "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                        <w:tblCellMar>\n" +
-                    "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                        </w:tblCellMar>\n" +
-                    "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                    "                    </w:tblPr>\n" +
-                    "                    <w:tblGrid>\n" +
-                    "                        <w:gridCol w:w=\"9144\"/>\n" +
-                    "                    </w:tblGrid>\n" +
-                    "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                    "                        <w:trPr>\n" +
-                    "                            <w:trHeight w:val=\"1\"/>\n" +
-                    "                        </w:trPr>\n" +
-                    "                        <w:tc>\n" +
-                    "                            <w:tcPr>\n" +
-                    "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                    "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                                <w:tcMar>\n" +
-                    "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                </w:tcMar>\n" +
-                    "                            </w:tcPr>\n" +
-                    "                            <w:p>\n" +
-                    "                                <w:pPr>\n" +
-                    "                                    <w:spacing w:after=\"120\"/>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                </w:pPr>\n" +
-                    "                                <w:r>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                    <w:t xml:space=\"preserve\"> Yes, ${referralRecordInstance?.otherFamilyMembersAffectedDetails ?: ''}</w:t>\n" +
-                    "                                </w:r>\n" +
-                    "                            </w:p>\n" +
-                    "                        </w:tc>\n" +
-                    "                    </w:tr>\n" +
-                    "                </w:tbl>"
-            mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(otherFamilyMembersAffectedDetails));
-        }else {
-            def otherFamilyMembersAffectedDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                    "                    <w:tblPr>\n" +
-                    "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                    "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                    "                        <w:tblBorders>\n" +
-                    "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                        </w:tblBorders>\n" +
-                    "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                        <w:tblCellMar>\n" +
-                    "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                        </w:tblCellMar>\n" +
-                    "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                    "                    </w:tblPr>\n" +
-                    "                    <w:tblGrid>\n" +
-                    "                        <w:gridCol w:w=\"9144\"/>\n" +
-                    "                    </w:tblGrid>\n" +
-                    "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                    "                        <w:trPr>\n" +
-                    "                            <w:trHeight w:val=\"1\"/>\n" +
-                    "                        </w:trPr>\n" +
-                    "                        <w:tc>\n" +
-                    "                            <w:tcPr>\n" +
-                    "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                    "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                                <w:tcMar>\n" +
-                    "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                </w:tcMar>\n" +
-                    "                            </w:tcPr>\n" +
-                    "                            <w:p>\n" +
-                    "                                <w:pPr>\n" +
-                    "                                    <w:spacing w:after=\"120\"/>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                </w:pPr>\n" +
-                    "                                <w:r>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                    <w:t xml:space=\"preserve\"> No </w:t>\n" +
-                    "                                </w:r>\n" +
-                    "                            </w:p>\n" +
-                    "                        </w:tc>\n" +
-                    "                    </w:tr>\n" +
-                    "                </w:tbl>"
-            mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(otherFamilyMembersAffectedDetails));
-        }
-
-        def consanguinityEvidence  = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Is there evidence of consanguinity?</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>"
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(consanguinityEvidence));
-        if (referralRecordInstance?.consanguinityEvidence?.consanguinityEvidence == 'Yes'){
-            def consanguinityEvidenceDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                    "                    <w:tblPr>\n" +
-                    "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                    "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                    "                        <w:tblBorders>\n" +
-                    "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                        </w:tblBorders>\n" +
-                    "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                        <w:tblCellMar>\n" +
-                    "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                        </w:tblCellMar>\n" +
-                    "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                    "                    </w:tblPr>\n" +
-                    "                    <w:tblGrid>\n" +
-                    "                        <w:gridCol w:w=\"9144\"/>\n" +
-                    "                    </w:tblGrid>\n" +
-                    "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                    "                        <w:trPr>\n" +
-                    "                            <w:trHeight w:val=\"1\"/>\n" +
-                    "                        </w:trPr>\n" +
-                    "                        <w:tc>\n" +
-                    "                            <w:tcPr>\n" +
-                    "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                    "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                                <w:tcMar>\n" +
-                    "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                </w:tcMar>\n" +
-                    "                            </w:tcPr>\n" +
-                    "                            <w:p>\n" +
-                    "                                <w:pPr>\n" +
-                    "                                    <w:spacing w:after=\"120\"/>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                </w:pPr>\n" +
-                    "                                <w:r>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                    <w:t xml:space=\"preserve\"> Yes, ${referralRecordInstance?.consanguinityEvidenceDetails ?: ''}</w:t>\n" +
-                    "                                </w:r>\n" +
-                    "                            </w:p>\n" +
-                    "                        </w:tc>\n" +
-                    "                    </w:tr>\n" +
-                    "                </w:tbl>"
-            mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(consanguinityEvidenceDetails));
-        }else {
-            def consanguinityEvidenceDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                    "                    <w:tblPr>\n" +
-                    "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                    "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                    "                        <w:tblBorders>\n" +
-                    "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                        </w:tblBorders>\n" +
-                    "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                        <w:tblCellMar>\n" +
-                    "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                        </w:tblCellMar>\n" +
-                    "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                    "                    </w:tblPr>\n" +
-                    "                    <w:tblGrid>\n" +
-                    "                        <w:gridCol w:w=\"9144\"/>\n" +
-                    "                    </w:tblGrid>\n" +
-                    "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                    "                        <w:trPr>\n" +
-                    "                            <w:trHeight w:val=\"1\"/>\n" +
-                    "                        </w:trPr>\n" +
-                    "                        <w:tc>\n" +
-                    "                            <w:tcPr>\n" +
-                    "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                    "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                                <w:tcMar>\n" +
-                    "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                </w:tcMar>\n" +
-                    "                            </w:tcPr>\n" +
-                    "                            <w:p>\n" +
-                    "                                <w:pPr>\n" +
-                    "                                    <w:spacing w:after=\"120\"/>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                </w:pPr>\n" +
-                    "                                <w:r>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                    <w:t xml:space=\"preserve\"> ${referralRecordInstance.consanguinityEvidence ?: ''} </w:t>\n" +
-                    "                                </w:r>\n" +
-                    "                            </w:p>\n" +
-                    "                        </w:tc>\n" +
-                    "                    </w:tr>\n" +
-                    "                </w:tbl>"
-            mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(consanguinityEvidenceDetails));
-        }
-
-        def penetranceEvidence  = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Is there evidence of reduced penetrance?</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>"
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(penetranceEvidence));
-        if (referralRecordInstance?.consanguinityEvidence?.consanguinityEvidence == 'Yes'){
-            def penetranceEvidenceDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                    "                    <w:tblPr>\n" +
-                    "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                    "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                    "                        <w:tblBorders>\n" +
-                    "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                        </w:tblBorders>\n" +
-                    "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                        <w:tblCellMar>\n" +
-                    "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                        </w:tblCellMar>\n" +
-                    "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                    "                    </w:tblPr>\n" +
-                    "                    <w:tblGrid>\n" +
-                    "                        <w:gridCol w:w=\"9144\"/>\n" +
-                    "                    </w:tblGrid>\n" +
-                    "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                    "                        <w:trPr>\n" +
-                    "                            <w:trHeight w:val=\"1\"/>\n" +
-                    "                        </w:trPr>\n" +
-                    "                        <w:tc>\n" +
-                    "                            <w:tcPr>\n" +
-                    "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                    "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                                <w:tcMar>\n" +
-                    "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                </w:tcMar>\n" +
-                    "                            </w:tcPr>\n" +
-                    "                            <w:p>\n" +
-                    "                                <w:pPr>\n" +
-                    "                                    <w:spacing w:after=\"120\"/>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                </w:pPr>\n" +
-                    "                                <w:r>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                    <w:t xml:space=\"preserve\"> Yes, ${referralRecordInstance?.penetranceDetails ?: ''}</w:t>\n" +
-                    "                                </w:r>\n" +
-                    "                            </w:p>\n" +
-                    "                        </w:tc>\n" +
-                    "                    </w:tr>\n" +
-                    "                </w:tbl>"
-            mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(penetranceEvidenceDetails));
-        }else {
-            def penetranceEvidenceDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                    "                    <w:tblPr>\n" +
-                    "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                    "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                    "                        <w:tblBorders>\n" +
-                    "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                        </w:tblBorders>\n" +
-                    "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                        <w:tblCellMar>\n" +
-                    "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                        </w:tblCellMar>\n" +
-                    "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                    "                    </w:tblPr>\n" +
-                    "                    <w:tblGrid>\n" +
-                    "                        <w:gridCol w:w=\"9144\"/>\n" +
-                    "                    </w:tblGrid>\n" +
-                    "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                    "                        <w:trPr>\n" +
-                    "                            <w:trHeight w:val=\"1\"/>\n" +
-                    "                        </w:trPr>\n" +
-                    "                        <w:tc>\n" +
-                    "                            <w:tcPr>\n" +
-                    "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                    "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                                <w:tcMar>\n" +
-                    "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                </w:tcMar>\n" +
-                    "                            </w:tcPr>\n" +
-                    "                            <w:p>\n" +
-                    "                                <w:pPr>\n" +
-                    "                                    <w:spacing w:after=\"120\"/>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                </w:pPr>\n" +
-                    "                                <w:r>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                    <w:t xml:space=\"preserve\"> ${referralRecordInstance.penetrance ?: ''} </w:t>\n" +
-                    "                                </w:r>\n" +
-                    "                            </w:p>\n" +
-                    "                        </w:tc>\n" +
-                    "                    </w:tr>\n" +
-                    "                </w:tbl>"
-            mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(penetranceEvidenceDetails));
-        }
-
-        def familyEthnicity = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Ethnicity of immediate family</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>"
-
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(familyEthnicity));
-        def familyEthnicityDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:tblPr>\n" +
-                "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                "                        <w:tblBorders>\n" +
-                "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                        </w:tblBorders>\n" +
-                "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                        <w:tblCellMar>\n" +
-                "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                        </w:tblCellMar>\n" +
-                "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                "                    </w:tblPr>\n" +
-                "                    <w:tblGrid>\n" +
-                "                        <w:gridCol w:w=\"9144\"/>\n" +
-                "                    </w:tblGrid>\n" +
-                "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                "                        <w:trPr>\n" +
-                "                            <w:trHeight w:val=\"1\"/>\n" +
-                "                        </w:trPr>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\"> Mother: ${referralRecordInstance?.patients?.find{p -> p?.relatedFrom?.relationshipType == RelationshipType.findByRelationshipTypeName('Mother')}?.ethnicity ?: ''}</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\"> Father: ${referralRecordInstance?.patients?.find{p -> p?.relatedFrom?.relationshipType == RelationshipType.findByRelationshipTypeName('Father')}?.ethnicity ?: ''}</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                    </w:tr>\n" +
-                "                </w:tbl>"
-
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(familyEthnicityDetails));
-
-        def familyHistory = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Family History</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>"
-
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(familyHistory));
-        def familyHistoryDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:tblPr>\n" +
-                "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                "                        <w:tblBorders>\n" +
-                "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                        </w:tblBorders>\n" +
-                "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                        <w:tblCellMar>\n" +
-                "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                        </w:tblCellMar>\n" +
-                "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                "                    </w:tblPr>\n" +
-                "                    <w:tblGrid>\n" +
-                "                        <w:gridCol w:w=\"9144\"/>\n" +
-                "                    </w:tblGrid>\n" +
-                "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                "                        <w:trPr>\n" +
-                "                            <w:trHeight w:val=\"1\"/>\n" +
-                "                        </w:trPr>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                        <w:u w:val=\"single\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Paternal</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                        <w:u w:val=\"single\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Maternal</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                    </w:tr>\n" +
-                "                </w:tbl>"
-
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(familyHistoryDetails));
-
-        def breastAndOrOvarianCancer = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:tblPr>\n" +
-                "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                "                        <w:tblBorders>\n" +
-                "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                        </w:tblBorders>\n" +
-                "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                        <w:tblCellMar>\n" +
-                "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                        </w:tblCellMar>\n" +
-                "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                "                    </w:tblPr>\n" +
-                "                    <w:tblGrid>\n" +
-                "                        <w:gridCol w:w=\"9144\"/>\n" +
-                "                    </w:tblGrid>\n" +
-                "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                "                        <w:trPr>\n" +
-                "                            <w:trHeight w:val=\"1\"/>\n" +
-                "                        </w:trPr>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\"> Breast And Or Ovarian Cancer: </w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Breast And Or Ovarian Cancer: </w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                    </w:tr>\n" +
-                "                </w:tbl>"
-
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(breastAndOrOvarianCancer));
-
-        def colorectalCancer = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:tblPr>\n" +
-                "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                "                        <w:tblBorders>\n" +
-                "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                        </w:tblBorders>\n" +
-                "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                        <w:tblCellMar>\n" +
-                "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                        </w:tblCellMar>\n" +
-                "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                "                    </w:tblPr>\n" +
-                "                    <w:tblGrid>\n" +
-                "                        <w:gridCol w:w=\"9144\"/>\n" +
-                "                    </w:tblGrid>\n" +
-                "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                "                        <w:trPr>\n" +
-                "                            <w:trHeight w:val=\"1\"/>\n" +
-                "                        </w:trPr>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\"> Colorectal Cancer: </w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Colorectal Cancer:</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                    </w:tr>\n" +
-                "                </w:tbl>"
-
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(colorectalCancer));
-
-        def ischaemicHeartDiseaseOrStroke = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:tblPr>\n" +
-                "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                "                        <w:tblBorders>\n" +
-                "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                        </w:tblBorders>\n" +
-                "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                        <w:tblCellMar>\n" +
-                "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                        </w:tblCellMar>\n" +
-                "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                "                    </w:tblPr>\n" +
-                "                    <w:tblGrid>\n" +
-                "                        <w:gridCol w:w=\"9144\"/>\n" +
-                "                    </w:tblGrid>\n" +
-                "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                "                        <w:trPr>\n" +
-                "                            <w:trHeight w:val=\"1\"/>\n" +
-                "                        </w:trPr>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\"> Ischaemic Heart Disease Or Stroke: </w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Ischaemic Heart Disease Or Stroke: </w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                    </w:tr>\n" +
-                "                </w:tbl>"
-
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(ischaemicHeartDiseaseOrStroke));
-
-        def endocrineTumours = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:tblPr>\n" +
-                "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                "                        <w:tblBorders>\n" +
-                "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                        </w:tblBorders>\n" +
-                "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                        <w:tblCellMar>\n" +
-                "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                        </w:tblCellMar>\n" +
-                "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                "                    </w:tblPr>\n" +
-                "                    <w:tblGrid>\n" +
-                "                        <w:gridCol w:w=\"9144\"/>\n" +
-                "                    </w:tblGrid>\n" +
-                "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                "                        <w:trPr>\n" +
-                "                            <w:trHeight w:val=\"1\"/>\n" +
-                "                        </w:trPr>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\"> Endocrine Tumours: </w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Endocrine Tumours: </w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                    </w:tr>\n" +
-                "                </w:tbl>"
-
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(endocrineTumours));
-
-        def familyHistoryNote = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Details and/or note any other significant family history</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>"
-
-        def familyHistoryNoteDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:tblPr>\n" +
-                "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                "                        <w:tblBorders>\n" +
-                "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                        </w:tblBorders>\n" +
-                "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                        <w:tblCellMar>\n" +
-                "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                        </w:tblCellMar>\n" +
-                "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                "                    </w:tblPr>\n" +
-                "                    <w:tblGrid>\n" +
-                "                        <w:gridCol w:w=\"9144\"/>\n" +
-                "                    </w:tblGrid>\n" +
-                "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                "                        <w:trPr>\n" +
-                "                            <w:trHeight w:val=\"1\"/>\n" +
-                "                        </w:trPr>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\"> ${referralRecordInstance?.furtherDetailsOfHistory ?: ''}</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                    </w:tr>\n" +
-                "                </w:tbl>"
-
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(familyHistoryNote));
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(familyHistoryNoteDetails));
-
-        def samplesName = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Number and identity of family members proposed for sequencing</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>"
-
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(samplesName));
-        def samplesNameDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:tblPr>\n" +
-                "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                "                        <w:tblBorders>\n" +
-                "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                        </w:tblBorders>\n" +
-                "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                        <w:tblCellMar>\n" +
-                "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                        </w:tblCellMar>\n" +
-                "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                "                    </w:tblPr>\n" +
-                "                    <w:tblGrid>\n" +
-                "                        <w:gridCol w:w=\"9144\"/>\n" +
-                "                    </w:tblGrid>\n" +
-                "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                "                        <w:trPr>\n" +
-                "                            <w:trHeight w:val=\"1\"/>\n" +
-                "                        </w:trPr>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\"> Number of samples: ${referralRecordInstance?.numberOfSamplesForSeq ?: ''}</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\"> Identity of family members: ${referralRecordInstance?.identityOfFamilyMembersSamplesForSeq ?: ''}</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                    </w:tr>\n" +
-                "                </w:tbl>"
-
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(samplesNameDetails));
-
-        def isAnySampleFromDeceasedIndividuals = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Are any of the samples are taken from deceased individuals?</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>"
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(isAnySampleFromDeceasedIndividuals));
-        if (referralRecordInstance?.isAnySampleFromDeceasedIndividuals){
-            def isAnySampleFromDeceasedIndividualsDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                    "                    <w:tblPr>\n" +
-                    "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                    "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                    "                        <w:tblBorders>\n" +
-                    "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                        </w:tblBorders>\n" +
-                    "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                        <w:tblCellMar>\n" +
-                    "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                        </w:tblCellMar>\n" +
-                    "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                    "                    </w:tblPr>\n" +
-                    "                    <w:tblGrid>\n" +
-                    "                        <w:gridCol w:w=\"9144\"/>\n" +
-                    "                    </w:tblGrid>\n" +
-                    "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                    "                        <w:trPr>\n" +
-                    "                            <w:trHeight w:val=\"1\"/>\n" +
-                    "                        </w:trPr>\n" +
-                    "                        <w:tc>\n" +
-                    "                            <w:tcPr>\n" +
-                    "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                    "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                                <w:tcMar>\n" +
-                    "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                </w:tcMar>\n" +
-                    "                            </w:tcPr>\n" +
-                    "                            <w:p>\n" +
-                    "                                <w:pPr>\n" +
-                    "                                    <w:spacing w:after=\"120\"/>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                </w:pPr>\n" +
-                    "                                <w:r>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                    <w:t xml:space=\"preserve\"> Yes, ${referralRecordInstance?.isAnySampleFromDeceasedIndividualsDetails ?: ''}</w:t>\n" +
-                    "                                </w:r>\n" +
-                    "                            </w:p>\n" +
-                    "                        </w:tc>\n" +
-                    "                    </w:tr>\n" +
-                    "                </w:tbl>"
-            mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(isAnySampleFromDeceasedIndividualsDetails));
-        }else {
-            def isAnySampleFromDeceasedIndividualsDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                    "                    <w:tblPr>\n" +
-                    "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                    "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                    "                        <w:tblBorders>\n" +
-                    "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                        </w:tblBorders>\n" +
-                    "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                        <w:tblCellMar>\n" +
-                    "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                        </w:tblCellMar>\n" +
-                    "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                    "                    </w:tblPr>\n" +
-                    "                    <w:tblGrid>\n" +
-                    "                        <w:gridCol w:w=\"9144\"/>\n" +
-                    "                    </w:tblGrid>\n" +
-                    "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                    "                        <w:trPr>\n" +
-                    "                            <w:trHeight w:val=\"1\"/>\n" +
-                    "                        </w:trPr>\n" +
-                    "                        <w:tc>\n" +
-                    "                            <w:tcPr>\n" +
-                    "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                    "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                                <w:tcMar>\n" +
-                    "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                </w:tcMar>\n" +
-                    "                            </w:tcPr>\n" +
-                    "                            <w:p>\n" +
-                    "                                <w:pPr>\n" +
-                    "                                    <w:spacing w:after=\"120\"/>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                </w:pPr>\n" +
-                    "                                <w:r>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                    <w:t xml:space=\"preserve\"> No </w:t>\n" +
-                    "                                </w:r>\n" +
-                    "                            </w:p>\n" +
-                    "                        </w:tc>\n" +
-                    "                    </w:tr>\n" +
-                    "                </w:tbl>"
-            mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(isAnySampleFromDeceasedIndividualsDetails));
-        }
-
-        def anyIndividualsForSeqOutOfArea = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Are any individuals proposed for sequencing out of area?</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>"
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(anyIndividualsForSeqOutOfArea));
-        if (referralRecordInstance?.anyIndividualsForSeqOutOfArea){
-            def anyIndividualsForSeqOutOfAreaDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                    "                    <w:tblPr>\n" +
-                    "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                    "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                    "                        <w:tblBorders>\n" +
-                    "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                        </w:tblBorders>\n" +
-                    "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                        <w:tblCellMar>\n" +
-                    "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                        </w:tblCellMar>\n" +
-                    "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                    "                    </w:tblPr>\n" +
-                    "                    <w:tblGrid>\n" +
-                    "                        <w:gridCol w:w=\"9144\"/>\n" +
-                    "                    </w:tblGrid>\n" +
-                    "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                    "                        <w:trPr>\n" +
-                    "                            <w:trHeight w:val=\"1\"/>\n" +
-                    "                        </w:trPr>\n" +
-                    "                        <w:tc>\n" +
-                    "                            <w:tcPr>\n" +
-                    "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                    "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                                <w:tcMar>\n" +
-                    "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                </w:tcMar>\n" +
-                    "                            </w:tcPr>\n" +
-                    "                            <w:p>\n" +
-                    "                                <w:pPr>\n" +
-                    "                                    <w:spacing w:after=\"120\"/>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                </w:pPr>\n" +
-                    "                                <w:r>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                    <w:t xml:space=\"preserve\"> Yes, ${referralRecordInstance?.anyIndividualsForSeqOutOfAreaDetails ?: ''}</w:t>\n" +
-                    "                                </w:r>\n" +
-                    "                            </w:p>\n" +
-                    "                        </w:tc>\n" +
-                    "                    </w:tr>\n" +
-                    "                </w:tbl>"
-            mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(anyIndividualsForSeqOutOfAreaDetails));
-        }else {
-            def anyIndividualsForSeqOutOfAreaDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                    "                    <w:tblPr>\n" +
-                    "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                    "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                    "                        <w:tblBorders>\n" +
-                    "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                        </w:tblBorders>\n" +
-                    "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                        <w:tblCellMar>\n" +
-                    "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                        </w:tblCellMar>\n" +
-                    "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                    "                    </w:tblPr>\n" +
-                    "                    <w:tblGrid>\n" +
-                    "                        <w:gridCol w:w=\"9144\"/>\n" +
-                    "                    </w:tblGrid>\n" +
-                    "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                    "                        <w:trPr>\n" +
-                    "                            <w:trHeight w:val=\"1\"/>\n" +
-                    "                        </w:trPr>\n" +
-                    "                        <w:tc>\n" +
-                    "                            <w:tcPr>\n" +
-                    "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                    "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                                <w:tcMar>\n" +
-                    "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                </w:tcMar>\n" +
-                    "                            </w:tcPr>\n" +
-                    "                            <w:p>\n" +
-                    "                                <w:pPr>\n" +
-                    "                                    <w:spacing w:after=\"120\"/>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                </w:pPr>\n" +
-                    "                                <w:r>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                    <w:t xml:space=\"preserve\"> No </w:t>\n" +
-                    "                                </w:r>\n" +
-                    "                            </w:p>\n" +
-                    "                        </w:tc>\n" +
-                    "                    </w:tr>\n" +
-                    "                </w:tbl>"
-            mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(anyIndividualsForSeqOutOfAreaDetails));
-        }
-
-        def furtherInformationAboutSampleAvailability = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Any further information about sample availability </w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>"
-
-        def furtherInformationAboutSampleAvailabilityDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:tblPr>\n" +
-                "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                "                        <w:tblBorders>\n" +
-                "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                        </w:tblBorders>\n" +
-                "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                        <w:tblCellMar>\n" +
-                "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                        </w:tblCellMar>\n" +
-                "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                "                    </w:tblPr>\n" +
-                "                    <w:tblGrid>\n" +
-                "                        <w:gridCol w:w=\"9144\"/>\n" +
-                "                    </w:tblGrid>\n" +
-                "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                "                        <w:trPr>\n" +
-                "                            <w:trHeight w:val=\"1\"/>\n" +
-                "                        </w:trPr>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\"> ${referralRecordInstance?.samplesForSeqDetails ?: ''}</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                    </w:tr>\n" +
-                "                </w:tbl>"
-
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(furtherInformationAboutSampleAvailability));
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(furtherInformationAboutSampleAvailabilityDetails));
-
-        def program = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Program</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>"
-
-        def programDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:tblPr>\n" +
-                "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                "                        <w:tblBorders>\n" +
-                "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                        </w:tblBorders>\n" +
-                "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                        <w:tblCellMar>\n" +
-                "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                        </w:tblCellMar>\n" +
-                "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                "                    </w:tblPr>\n" +
-                "                    <w:tblGrid>\n" +
-                "                        <w:gridCol w:w=\"9144\"/>\n" +
-                "                    </w:tblGrid>\n" +
-                "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                "                        <w:trPr>\n" +
-                "                            <w:trHeight w:val=\"1\"/>\n" +
-                "                        </w:trPr>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\"> ${referralRecordInstance?.program?.name ?: ''}</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                    </w:tr>\n" +
-                "                </w:tbl>"
-
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(program));
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(programDetails));
-
-        def note = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Supporting information</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>"
-
-        def noteDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:tblPr>\n" +
-                "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                "                        <w:tblBorders>\n" +
-                "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                        </w:tblBorders>\n" +
-                "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                        <w:tblCellMar>\n" +
-                "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                        </w:tblCellMar>\n" +
-                "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                "                    </w:tblPr>\n" +
-                "                    <w:tblGrid>\n" +
-                "                        <w:gridCol w:w=\"9144\"/>\n" +
-                "                    </w:tblGrid>\n" +
-                "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                "                        <w:trPr>\n" +
-                "                            <w:trHeight w:val=\"1\"/>\n" +
-                "                        </w:trPr>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\"> ${referralRecordInstance?.note ?: ''}</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                    </w:tr>\n" +
-                "                </w:tbl>"
-
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(note));
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(noteDetails));
-
-        def targetCategory = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Target 100,000 Genomes Project Rare Disease category </w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>"
-
-        def targetCategoryDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:tblPr>\n" +
-                "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                "                        <w:tblBorders>\n" +
-                "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                        </w:tblBorders>\n" +
-                "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                        <w:tblCellMar>\n" +
-                "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                        </w:tblCellMar>\n" +
-                "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                "                    </w:tblPr>\n" +
-                "                    <w:tblGrid>\n" +
-                "                        <w:gridCol w:w=\"9144\"/>\n" +
-                "                    </w:tblGrid>\n" +
-                "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                "                        <w:trPr>\n" +
-                "                            <w:trHeight w:val=\"1\"/>\n" +
-                "                        </w:trPr>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\"> ${referralRecordInstance?.targetCategory?.diseaseGroup ?: ''}, ${referralRecordInstance?.targetCategory?.diseaseName ?: ''}</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                    </w:tr>\n" +
-                "                </w:tbl>"
-
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(targetCategory));
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(targetCategoryDetails));
-
-        def eligibility  = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">Is this patient/family eligible?</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>"
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(eligibility));
-        if (referralRecordInstance?.eligibility?.eligibilityTypeName == 'Yes' || referralRecordInstance?.eligibility?.eligibilityTypeName == 'Unknown'){
-            def eligibilityDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                    "                    <w:tblPr>\n" +
-                    "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                    "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                    "                        <w:tblBorders>\n" +
-                    "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                        </w:tblBorders>\n" +
-                    "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                        <w:tblCellMar>\n" +
-                    "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                        </w:tblCellMar>\n" +
-                    "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                    "                    </w:tblPr>\n" +
-                    "                    <w:tblGrid>\n" +
-                    "                        <w:gridCol w:w=\"9144\"/>\n" +
-                    "                    </w:tblGrid>\n" +
-                    "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                    "                        <w:trPr>\n" +
-                    "                            <w:trHeight w:val=\"1\"/>\n" +
-                    "                        </w:trPr>\n" +
-                    "                        <w:tc>\n" +
-                    "                            <w:tcPr>\n" +
-                    "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                    "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                                <w:tcMar>\n" +
-                    "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                </w:tcMar>\n" +
-                    "                            </w:tcPr>\n" +
-                    "                            <w:p>\n" +
-                    "                                <w:pPr>\n" +
-                    "                                    <w:spacing w:after=\"120\"/>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                </w:pPr>\n" +
-                    "                                <w:r>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                    <w:t xml:space=\"preserve\"> ${referralRecordInstance?.eligibility ?: ''} ${referralRecordInstance?.eligibilityDetails ?: ''}</w:t>\n" +
-                    "                                </w:r>\n" +
-                    "                            </w:p>\n" +
-                    "                        </w:tc>\n" +
-                    "                    </w:tr>\n" +
-                    "                </w:tbl>"
-            mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(eligibilityDetails));
-        }else {
-            def eligibilityDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                    "                    <w:tblPr>\n" +
-                    "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                    "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                    "                        <w:tblBorders>\n" +
-                    "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                    "                        </w:tblBorders>\n" +
-                    "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                        <w:tblCellMar>\n" +
-                    "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                    "                        </w:tblCellMar>\n" +
-                    "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                    "                    </w:tblPr>\n" +
-                    "                    <w:tblGrid>\n" +
-                    "                        <w:gridCol w:w=\"9144\"/>\n" +
-                    "                    </w:tblGrid>\n" +
-                    "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                    "                        <w:trPr>\n" +
-                    "                            <w:trHeight w:val=\"1\"/>\n" +
-                    "                        </w:trPr>\n" +
-                    "                        <w:tc>\n" +
-                    "                            <w:tcPr>\n" +
-                    "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                    "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                    "                                <w:tcMar>\n" +
-                    "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                    "                                </w:tcMar>\n" +
-                    "                            </w:tcPr>\n" +
-                    "                            <w:p>\n" +
-                    "                                <w:pPr>\n" +
-                    "                                    <w:spacing w:after=\"120\"/>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                </w:pPr>\n" +
-                    "                                <w:r>\n" +
-                    "                                    <w:rPr>\n" +
-                    "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                    "                                        <w:sz w:val=\"20\"/>\n" +
-                    "                                        <w:szCs w:val=\"20\"/>\n" +
-                    "                                    </w:rPr>\n" +
-                    "                                    <w:t xml:space=\"preserve\"> ${referralRecordInstance.eligibility ?: '' } </w:t>\n" +
-                    "                                </w:r>\n" +
-                    "                            </w:p>\n" +
-                    "                        </w:tc>\n" +
-                    "                    </w:tr>\n" +
-                    "                </w:tbl>"
-            mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(eligibilityDetails));
-        }
-
-        def genomesProjectRecruitment = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:pPr>\n" +
-                "                        <w:spacing w:after=\"120\"/>\n" +
-                "                        <w:rPr>\n" +
-                "                            <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                            <w:b/>\n" +
-                "                            <w:sz w:val=\"22\"/>\n" +
-                "                            <w:szCs w:val=\"22\"/>\n" +
-                "                            <w:u w:val=\"single\"/>\n" +
-                "                        </w:rPr>\n" +
-                "                    </w:pPr>\n" +
-                "                    <w:proofErr w:type=\"gramStart\"/>\n" +
-                "                    <w:r>\n" +
-                "                        <w:rPr>\n" +
-                "                            <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                            <w:b/>\n" +
-                "                            <w:sz w:val=\"22\"/>\n" +
-                "                            <w:szCs w:val=\"22\"/>\n" +
-                "                            <w:u w:val=\"single\"/>\n" +
-                "                        </w:rPr>\n" +
-                "                        <w:t>100,000 Genomes Project Recruitment</w:t>\n" +
-                "                    </w:r>\n" +
-                "                </w:p>";
-
-        def consentQuestion = "<w:p xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\">The Clinical Genetics Department runs dedicated recruitment clinics for the 100,000 Genomes Project.  At your request, this application can stand as a referral for a Genetic Counsellor to consent the patient or family and collect samples through one of these clinics</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>"
-
-        def consentPatientOrFamilyDetails = "<w:tbl xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" >\n" +
-                "                    <w:tblPr>\n" +
-                "                        <w:tblW w:w=\"0\" w:type=\"auto\"/>\n" +
-                "                        <w:tblInd w:w=\"98\" w:type=\"dxa\"/>\n" +
-                "                        <w:tblBorders>\n" +
-                "                            <w:top w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:left w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:bottom w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:right w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideH w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                            <w:insideV w:val=\"single\" w:color=\"auto\" w:sz=\"4\" w:space=\"0\"/>\n" +
-                "                        </w:tblBorders>\n" +
-                "                        <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                        <w:tblCellMar>\n" +
-                "                            <w:left w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                            <w:right w:w=\"10\" w:type=\"dxa\"/>\n" +
-                "                        </w:tblCellMar>\n" +
-                "                        <w:tblLook w:firstRow=\"1\" w:lastRow=\"0\" w:firstColumn=\"1\" w:lastColumn=\"0\" w:noHBand=\"0\" w:noVBand=\"1\" w:val=\"04A0\"/>\n" +
-                "                    </w:tblPr>\n" +
-                "                    <w:tblGrid>\n" +
-                "                        <w:gridCol w:w=\"9144\"/>\n" +
-                "                    </w:tblGrid>\n" +
-                "                    <w:tr w:rsidTr=\"00C87F4E\">\n" +
-                "                        <w:trPr>\n" +
-                "                            <w:trHeight w:val=\"1\"/>\n" +
-                "                        </w:trPr>\n" +
-                "                        <w:tc>\n" +
-                "                            <w:tcPr>\n" +
-                "                                <w:tcW w:w=\"9144\" w:type=\"dxa\"/>\n" +
-                "                                <w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\" w:themeFill=\"background1\" w:themeFillShade=\"D9\"/>\n" +
-                "                                <w:tcMar>\n" +
-                "                                    <w:left w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                    <w:right w:w=\"108\" w:type=\"dxa\"/>\n" +
-                "                                </w:tcMar>\n" +
-                "                            </w:tcPr>\n" +
-                "                            <w:p>\n" +
-                "                                <w:pPr>\n" +
-                "                                    <w:spacing w:after=\"120\"/>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                </w:pPr>\n" +
-                "                                <w:r>\n" +
-                "                                    <w:rPr>\n" +
-                "                                        <w:rFonts w:eastAsia=\"Calibri\" w:cs=\"Calibri\" w:asciiTheme=\"minorHAnsi\" w:hAnsiTheme=\"minorHAnsi\"/>\n" +
-                "                                        <w:sz w:val=\"20\"/>\n" +
-                "                                        <w:szCs w:val=\"20\"/>\n" +
-                "                                    </w:rPr>\n" +
-                "                                    <w:t xml:space=\"preserve\"> ${referralRecordInstance?.consentPatientOrFamily ?: ''}</w:t>\n" +
-                "                                </w:r>\n" +
-                "                            </w:p>\n" +
-                "                        </w:tc>\n" +
-                "                    </w:tr>\n" +
-                "                </w:tbl>"
-
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(genomesProjectRecruitment));
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(consentQuestion));
-        mainPart.addObject(org.docx4j.XmlUtils.unmarshalString(consentPatientOrFamilyDetails));
-
-        // write out our word doc to disk
-        File file = File.createTempFile("wordexport-", ".docx")
-        wordMLPackage.save file
-
-        // and send it all back to the browser
-        response.setHeader("Content-disposition", "attachment; filename=" + referralRecordInstance.patients?.find{p -> p.isProband}?.familyName + "-" + referralRecordInstance.uniqueRef + ".docx");
-        response.setContentType("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-        response.outputStream << file.readBytes()
-        file.delete()
+        wordProcessingService.processingWordDocument(referralRecordInstance)
     }
 
+    @Secured(['ROLE_ADMIN'])
     def list() {
-        params.max = Math.min(params.max ? params.int('max') : 10, 100)
-        [referralRecordInstanceList: ReferralRecord.list(params).sort {it?.referralStatus?.referralStatusName}, referralRecordInstanceTotal: ReferralRecord.count()]
+        def month= params.month
+        def year= params.year
+        if (month && year){
+            if (month.toString().size() == 1){
+                month = '0' + month.toString()
+            }
+            def startDate = new Date()
+            def paramsStartDate = year.toString() + '-' + month.toString() + '-' +'01'
+            startDate = startDate.parse("yyyy-MM-dd", paramsStartDate)
+            def endDate =new Date()
+            def paramsEndDate = year.toString() + '-' + month.toString() + '-' +'31'
+            endDate = endDate.parse("yyyy-MM-dd", paramsEndDate)
+            def referralRecordInstanceList = ReferralRecord.findAllByMeetingDateBetween(startDate, endDate).sort {it?.referralStatus?.referralStatusName}
+            [referralRecordInstanceList: referralRecordInstanceList, referralRecordInstanceTotal: referralRecordInstanceList?.size(), year:year, month:month]
+        }else {
+            params.max = Math.min(params.max ? params.int('max') : 10, 100)
+            [referralRecordInstanceList: ReferralRecord.list(params).sort {it?.referralStatus?.referralStatusName}, referralRecordInstanceTotal: ReferralRecord.count()]
+        }
     }
 
     def filter = {
-        if(!params.max) params.max = 10
-        render( view:'list', model:[ referralRecordInstanceList: filterPaneService.filter( params, ReferralRecord ),
-                                     referralRecordInstanceTotal: filterPaneService.count( params, ReferralRecord ),
-                                     filterParams: FilterPaneUtils.extractFilterParams(params), params:params ] )
+        def month= params.selectedMonth
+        def year= params.selectedYear
+        if (month && year){
+            if (month.toString().size() == 1){
+                month = '0' + month.toString()
+            }
+            def startDate = new Date()
+            def paramsStartDate = year.toString() + '-' + month.toString() + '-' +'01'
+            startDate = startDate.parse("yyyy-MM-dd", paramsStartDate)
+            def endDate =new Date()
+            def paramsEndDate = year.toString() + '-' + month.toString() + '-' +'31'
+            endDate = endDate.parse("yyyy-MM-dd", paramsEndDate)
+            def referralRecordInstanceListFilteredByMonth = ReferralRecord.findAllByMeetingDateBetween(startDate, endDate).sort {it?.referralStatus?.referralStatusName}
+            def referralRecordInstanceList = filterPaneService.filter( params, ReferralRecord )
+            referralRecordInstanceList = referralRecordInstanceListFilteredByMonth.intersect(referralRecordInstanceList)
+            render( view:'list', model:[ referralRecordInstanceList: referralRecordInstanceList,
+                                         referralRecordInstanceTotal: referralRecordInstanceList?.size(),
+                                         filterParams: FilterPaneUtils.extractFilterParams(params), params:params, year:year, month:month] )
+        }else {
+            if(!params.max) params.max = 10
+            render( view:'list', model:[ referralRecordInstanceList: filterPaneService.filter( params, ReferralRecord ),
+                                         referralRecordInstanceTotal: filterPaneService.count( params, ReferralRecord ),
+                                         filterParams: FilterPaneUtils.extractFilterParams(params), params:params ] )
+        }
     }
 
     def filteredReferralList() {
@@ -2858,9 +123,31 @@ class ReferralRecordController {
     }
 
     def filteredReferralListByStatus(){
-        def status = ReferralStatus.findById(params.long('status'))
-        def referralRecordInstanceList = ReferralRecord.findAllByReferralStatus(status)
-        [referralRecordInstanceList:referralRecordInstanceList, status:status?.referralStatusName]
+        def month= params.month
+        def year= params.year
+        def status = ReferralStatus.findByReferralStatusName(params.status)
+        if (month && year){
+            if (month.toString().size() == 1){
+                month = '0' + month.toString()
+            }
+            def startDate = new Date()
+            def paramsStartDate = year.toString() + '-' + month.toString() + '-' +'01'
+            startDate = startDate.parse("yyyy-MM-dd", paramsStartDate)
+            def endDate =new Date()
+            def paramsEndDate = year.toString() + '-' + month.toString() + '-' +'31'
+            endDate = endDate.parse("yyyy-MM-dd", paramsEndDate)
+            def referralRecordInstanceList = ReferralRecord.createCriteria().list {
+                and {
+                    le("meetingDate", endDate)
+                    ge("meetingDate", startDate)
+                    eq("referralStatus", status)
+                }
+            }
+            [referralRecordInstanceList:referralRecordInstanceList, status:status?.referralStatusName]
+        }else {
+            def referralRecordInstanceList = ReferralRecord.findAllByReferralStatus(status)
+            [referralRecordInstanceList:referralRecordInstanceList, status:status?.referralStatusName]
+        }
     }
 
     //def pdfRenderingService
@@ -2967,7 +254,7 @@ class ReferralRecordController {
     }
 
     def create() {
-        respond referralRecordInstance: new ReferralRecord(params)
+        [referralRecordInstance: new ReferralRecord(params)]
     }
 
     def download(long id) {
@@ -2995,6 +282,32 @@ class ReferralRecordController {
         }
     }
 
+    def sampleTracking(ReferralRecord referralRecordInstance){
+        def probandNHSNumber = Patient.findByReferralRecordAndIsProband(referralRecordInstance, true)?.nhsNumber
+        probandNHSNumber = probandNHSNumber?.toString()?.replace(' ', '')?.trim()
+        def familyNumber = null
+        def sampleTrackingList = []
+        def path = grailsApplication.config.uploadFolder + "/StarLims/RD_MDT_Header.csv"
+        def resources = new File(path)
+        resources.splitEachLine(',')
+                { fields ->
+                    def nhsNumber = fields[0]?.toString()?.replace(' ', '')?.trim()
+                    if (nhsNumber && nhsNumber != 'NULL' && nhsNumber == probandNHSNumber){
+                        familyNumber = fields[4]?.toString()
+                    }
+                    return
+                }
+        resources.splitEachLine(',')
+                { fields ->
+                    if (familyNumber && familyNumber != 'NULL' && familyNumber == fields[4]?.toString()?.trim()){
+                        def sampleTrackingInstance = []
+                        sampleTrackingInstance << fields[1].toString() << fields[2].toString() << fields[3].toString() << fields[4].toString() << fields[5].toString() << fields[6].toString() << fields[7].toString() << fields[8].toString() << fields[9].toString() << fields[10].toString() << fields[11].toString() << fields[12].toString() << fields[13].toString()
+                        sampleTrackingList << sampleTrackingInstance
+                    }
+                }
+        [sampleTrackingList:sampleTrackingList, referralRecordInstance:referralRecordInstance]
+    }
+
     @Transactional
     def save(ReferralRecord referralRecordInstance) {
         if (referralRecordInstance == null) {
@@ -3003,13 +316,15 @@ class ReferralRecordController {
         }
 
         if (referralRecordInstance.hasErrors()) {
-            respond referralRecordInstance.errors, view: 'create'
+//            respond referralRecordInstance.errors, view: 'create'
+            render view: 'create', model: [referralRecordInstance: referralRecordInstance]
             return
         }
 
         if (params.nhsNumberProband && Patient.findByNhsNumber(params.nhsNumberProband)){
             flash.message = "A patient with NHS number ${params.nhsNumberProband} already exists"
-            respond referralRecordInstance, view: 'create'
+//            respond referralRecordInstance, view: 'create'
+            render view: 'create', model: [referralRecordInstance: referralRecordInstance]
             return
         }
 
@@ -3045,6 +360,30 @@ class ReferralRecordController {
             }
             if (params.cDetails6){
                 clinicalDetailsList.add(new ClinicalDetails(clinicalDetailsName:params.cDetails6))
+            }
+            if (params.cDetails7) {
+                clinicalDetailsList.add(new ClinicalDetails(clinicalDetailsName: params.cDetails7))
+            }
+            if (params.cDetails8) {
+                clinicalDetailsList.add(new ClinicalDetails(clinicalDetailsName: params.cDetails8))
+            }
+            if (params.cDetails9) {
+                clinicalDetailsList.add(new ClinicalDetails(clinicalDetailsName: params.cDetails9))
+            }
+            if (params.cDetails10) {
+                clinicalDetailsList.add(new ClinicalDetails(clinicalDetailsName: params.cDetails10))
+            }
+            if (params.cDetails11) {
+                clinicalDetailsList.add(new ClinicalDetails(clinicalDetailsName: params.cDetails11))
+            }
+            if (params.cDetails12) {
+                clinicalDetailsList.add(new ClinicalDetails(clinicalDetailsName: params.cDetails12))
+            }
+            if (params.cDetails13) {
+                clinicalDetailsList.add(new ClinicalDetails(clinicalDetailsName: params.cDetails13))
+            }
+            if (params.cDetails14) {
+                clinicalDetailsList.add(new ClinicalDetails(clinicalDetailsName: params.cDetails14))
             }
             if (!clinicalDetailsList.empty){
                 for (int i = 0; i <clinicalDetailsList.size(); i++ ){
@@ -3093,13 +432,15 @@ class ReferralRecordController {
             if (params.ethnicityFather){
                 def ethnicity = params.ethnicityFather
                 def patient = new Patient(isProband: false, referralRecord: referralRecordInstance, ethnicity: ethnicity, otherEthnicity: params.otherEthnicityFather).save flush: true
-                new Relationship(relationshipType: RelationshipType.findByRelationshipTypeName('Father'), patient: proband, relatedPatient: patient).save flush: true
+                def relationship = new Relationship(relationshipType: RelationshipType.findByRelationshipTypeName('Father'), relatedPatient: patient)
+                proband.addToRelationshipTo(relationship).save flush: true
             }
 
             if (params.ethnicityMother){
                 def ethnicity = params.ethnicityMother
                 def patient = new Patient(isProband: false, referralRecord: referralRecordInstance, ethnicity: ethnicity, otherEthnicity: params.otherEthnicityMother).save flush: true
-                new Relationship(relationshipType: RelationshipType.findByRelationshipTypeName('Mother'), patient: proband, relatedPatient: patient).save flush: true
+                def relationship = new Relationship(relationshipType: RelationshipType.findByRelationshipTypeName('Mother'), relatedPatient: patient)
+                proband.addToRelationshipTo(relationship).save flush: true
             }
 
             if (Clinician.findById(params.long('correspondingClinician'))){
@@ -3115,7 +456,8 @@ class ReferralRecordController {
             if (pedigreeFile?.originalFilename){
                 if (pedigreeFile?.empty) {
                     flash.message = "File cannot be empty"
-                    respond referralRecordInstance.errors, view: 'create'
+//                    respond referralRecordInstance.errors, view: 'create'
+                    render view: 'create', model: [referralRecordInstance: referralRecordInstance]
                     return
                 }
                 referralRecordInstance.pedigree = grailsApplication.config.uploadFolder +'Pedigree/'+
@@ -3137,7 +479,8 @@ class ReferralRecordController {
                 def attachedEvidenceFile = request.getFile('attachedEvidenceFile')
                 if (!attachedEvidenceFile.originalFilename) {
                     flash.message = "Please choose a file"
-                    respond referralRecordInstance, view: 'create'
+//                    respond referralRecordInstance, view: 'create'
+                    render view: 'create', model: [referralRecordInstance: referralRecordInstance]
                 }else{
                     def attachedEvidenceInstance = new AttachedEvidence(type: params.attachedEvidenceType, addedOn: new Date(), referralRecord: referralRecordInstance)
                     attachedEvidenceInstance.save flush: true
@@ -3158,7 +501,8 @@ class ReferralRecordController {
                 def attachedEvidenceFile = request.getFile('attachedEvidenceFile1')
                 if (!attachedEvidenceFile.originalFilename) {
                     flash.message = "Please choose a file"
-                    respond referralRecordInstance, view: 'create'
+//                    respond referralRecordInstance, view: 'create'
+                    render view: 'create', model: [referralRecordInstance: referralRecordInstance]
                 }else{
                     def attachedEvidenceInstance = new AttachedEvidence(type: params.attachedEvidenceType1, addedOn: new Date(), referralRecord: referralRecordInstance)
                     attachedEvidenceInstance.save flush: true
@@ -3179,7 +523,8 @@ class ReferralRecordController {
                 def attachedEvidenceFile = request.getFile('attachedEvidenceFile2')
                 if (!attachedEvidenceFile.originalFilename) {
                     flash.message = "Please choose a file"
-                    respond referralRecordInstance, view: 'create'
+//                    respond referralRecordInstance, view: 'create'
+                      render view: 'create', model: [referralRecordInstance: referralRecordInstance]
                 }else{
                     def attachedEvidenceInstance = new AttachedEvidence(type: params.attachedEvidenceType2, addedOn: new Date(), referralRecord: referralRecordInstance)
                     attachedEvidenceInstance.save flush: true
@@ -3200,7 +545,8 @@ class ReferralRecordController {
                 def attachedEvidenceFile = request.getFile('attachedEvidenceFile3')
                 if (!attachedEvidenceFile.originalFilename) {
                     flash.message = "Please choose a file"
-                    respond referralRecordInstance, view: 'create'
+//                    respond referralRecordInstance, view: 'create'
+                      render view: 'create', model: [referralRecordInstance: referralRecordInstance]
                 }else{
                     def attachedEvidenceInstance = new AttachedEvidence(type: params.attachedEvidenceType3, addedOn: new Date(), referralRecord: referralRecordInstance)
                     attachedEvidenceInstance.save flush: true
@@ -3221,7 +567,8 @@ class ReferralRecordController {
                 def attachedEvidenceFile = request.getFile('attachedEvidenceFile4')
                 if (!attachedEvidenceFile.originalFilename) {
                     flash.message = "Please choose a file"
-                    respond referralRecordInstance, view: 'create'
+//                    respond referralRecordInstance, view: 'create'
+                    render view: 'create', model: [referralRecordInstance: referralRecordInstance]
                 }else{
                     def attachedEvidenceInstance = new AttachedEvidence(type: params.attachedEvidenceType4, addedOn: new Date(), referralRecord: referralRecordInstance)
                     attachedEvidenceInstance.save flush: true
@@ -3242,7 +589,8 @@ class ReferralRecordController {
                 def attachedEvidenceFile = request.getFile('attachedEvidenceFile5')
                 if (!attachedEvidenceFile.originalFilename) {
                     flash.message = "Please choose a file"
-                    respond referralRecordInstance, view: 'create'
+//                    respond referralRecordInstance, view: 'create'
+                      render view: 'create', model: [referralRecordInstance: referralRecordInstance]
                 }else{
                     def attachedEvidenceInstance = new AttachedEvidence(type: params.attachedEvidenceType5, addedOn: new Date(), referralRecord: referralRecordInstance)
                     attachedEvidenceInstance.save flush: true
@@ -3325,7 +673,8 @@ class ReferralRecordController {
         }
 
         if (referralRecordInstance.hasErrors()) {
-            respond referralRecordInstance.errors, view: 'edit'
+//            respond referralRecordInstance.errors, view: 'edit'
+            render view: 'edit', model: [referralRecordInstance: referralRecordInstance]
             return
         }
 
@@ -3369,6 +718,30 @@ class ReferralRecordController {
         }
         if (params.cDetails6) {
             clinicalDetailsList.add(new ClinicalDetails(clinicalDetailsName: params.cDetails6))
+        }
+        if (params.cDetails7) {
+            clinicalDetailsList.add(new ClinicalDetails(clinicalDetailsName: params.cDetails7))
+        }
+        if (params.cDetails8) {
+            clinicalDetailsList.add(new ClinicalDetails(clinicalDetailsName: params.cDetails8))
+        }
+        if (params.cDetails9) {
+            clinicalDetailsList.add(new ClinicalDetails(clinicalDetailsName: params.cDetails9))
+        }
+        if (params.cDetails10) {
+            clinicalDetailsList.add(new ClinicalDetails(clinicalDetailsName: params.cDetails10))
+        }
+        if (params.cDetails11) {
+            clinicalDetailsList.add(new ClinicalDetails(clinicalDetailsName: params.cDetails11))
+        }
+        if (params.cDetails12) {
+            clinicalDetailsList.add(new ClinicalDetails(clinicalDetailsName: params.cDetails12))
+        }
+        if (params.cDetails13) {
+            clinicalDetailsList.add(new ClinicalDetails(clinicalDetailsName: params.cDetails13))
+        }
+        if (params.cDetails14) {
+            clinicalDetailsList.add(new ClinicalDetails(clinicalDetailsName: params.cDetails14))
         }
         if (!clinicalDetailsList.empty) {
             for (int i = 0; i < clinicalDetailsList.size(); i++) {
@@ -3434,7 +807,8 @@ class ReferralRecordController {
                 father.save flush: true
             }else {
                 def patient = new Patient(isProband: false, referralRecord: referralRecordInstance, ethnicity: params.ethnicityFather).save flush: true
-                new Relationship(relationshipType: RelationshipType.findByRelationshipTypeName('Father'), patient: proband, relatedPatient: patient).save flush: true
+                def relationship = new Relationship(relationshipType: RelationshipType.findByRelationshipTypeName('Father'), relatedPatient: patient)
+                proband.addToRelationshipTo(relationship).save flush: true
             }
         }
 
@@ -3444,8 +818,9 @@ class ReferralRecordController {
                 mother.ethnicity = Ethnicity.findById(params.long('ethnicityMother'))
                 mother.save flush: true
             }else {
-                def patient = new Patient(isProband: false, referralRecord: referralRecordInstance, ethnicity: params.ethnicityFather).save flush: true
-                new Relationship(relationshipType: RelationshipType.findByRelationshipTypeName('Mother'), patient: proband, relatedPatient: patient).save flush: true
+                def patient = new Patient(isProband: false, referralRecord: referralRecordInstance, ethnicity: params.ethnicityMother).save flush: true
+                def relationship = new Relationship(relationshipType: RelationshipType.findByRelationshipTypeName('Mother'), relatedPatient: patient)
+                proband.addToRelationshipTo(relationship).save flush: true
             }
         }
 
@@ -3462,7 +837,8 @@ class ReferralRecordController {
         if (pedigreeFile?.originalFilename) {
             if (pedigreeFile?.empty) {
                 flash.message = "File cannot be empty"
-                respond referralRecordInstance.errors, view: 'create'
+//                respond referralRecordInstance.errors, view: 'create'
+                render view: 'edit', model: [referralRecordInstance: referralRecordInstance]
                 return
             }
             referralRecordInstance.pedigree = grailsApplication.config.uploadFolder + 'Pedigree/' +
@@ -3484,7 +860,8 @@ class ReferralRecordController {
             def attachedEvidenceFile = request.getFile('attachedEvidenceFile1')
             if (!attachedEvidenceFile.originalFilename) {
                 flash.message = "Please choose a file"
-                respond referralRecordInstance, view: 'create'
+//                respond referralRecordInstance, view: 'create'
+                render view: 'edit', model: [referralRecordInstance: referralRecordInstance]
             }else{
                 def attachedEvidenceInstance = new AttachedEvidence(type: params.attachedEvidenceType1, addedOn: new Date(), referralRecord: referralRecordInstance)
                 attachedEvidenceInstance.save flush: true
@@ -3505,7 +882,8 @@ class ReferralRecordController {
             def attachedEvidenceFile = request.getFile('attachedEvidenceFile2')
             if (!attachedEvidenceFile.originalFilename) {
                 flash.message = "Please choose a file"
-                respond referralRecordInstance, view: 'create'
+//                respond referralRecordInstance, view: 'create'
+                render view: 'edit', model: [referralRecordInstance: referralRecordInstance]
             }else{
                 def attachedEvidenceInstance = new AttachedEvidence(type: params.attachedEvidenceType2, addedOn: new Date(), referralRecord: referralRecordInstance)
                 attachedEvidenceInstance.save flush: true
@@ -3526,7 +904,8 @@ class ReferralRecordController {
             def attachedEvidenceFile = request.getFile('attachedEvidenceFile3')
             if (!attachedEvidenceFile.originalFilename) {
                 flash.message = "Please choose a file"
-                respond referralRecordInstance, view: 'create'
+//                respond referralRecordInstance, view: 'create'
+                render view: 'edit', model: [referralRecordInstance: referralRecordInstance]
             }else{
                 def attachedEvidenceInstance = new AttachedEvidence(type: params.attachedEvidenceType3, addedOn: new Date(), referralRecord: referralRecordInstance)
                 attachedEvidenceInstance.save flush: true
@@ -3547,7 +926,8 @@ class ReferralRecordController {
             def attachedEvidenceFile = request.getFile('attachedEvidenceFile4')
             if (!attachedEvidenceFile.originalFilename) {
                 flash.message = "Please choose a file"
-                respond referralRecordInstance, view: 'create'
+//                respond referralRecordInstance, view: 'create'
+                render view: 'edit', model: [referralRecordInstance: referralRecordInstance]
             }else{
                 def attachedEvidenceInstance = new AttachedEvidence(type: params.attachedEvidenceType4, addedOn: new Date(), referralRecord: referralRecordInstance)
                 attachedEvidenceInstance.save flush: true
@@ -3568,7 +948,8 @@ class ReferralRecordController {
             def attachedEvidenceFile = request.getFile('attachedEvidenceFile5')
             if (!attachedEvidenceFile.originalFilename) {
                 flash.message = "Please choose a file"
-                respond referralRecordInstance, view: 'create'
+//                respond referralRecordInstance, view: 'create'
+                render view: 'edit', model: [referralRecordInstance: referralRecordInstance]
             }else{
                 def attachedEvidenceInstance = new AttachedEvidence(type: params.attachedEvidenceType5, addedOn: new Date(), referralRecord: referralRecordInstance)
                 attachedEvidenceInstance.save flush: true
@@ -3587,6 +968,65 @@ class ReferralRecordController {
 
         flash.message = "Application updated"
         redirect referralRecordInstance
+    }
+
+    def findEligibilityStatements() {
+        def search= params.long('search')
+        if (search) {
+            def specificDisorder = SpecificDisorders.findByOriginalId(RareDiseaseConditions.findById(search)?.originalId?.toString())
+            def specificDisorderId = specificDisorder?.originalId
+            def eligibilityQuestionVersion = specificDisorder?.eligibilityQuestion?.versionNumber
+            render(template: "eligibilityStatements", model: [specificDisorderId: specificDisorderId, eligibilityQuestionVersion:eligibilityQuestionVersion])
+        }
+    }
+
+
+    def validNHSNum(){
+        def nhsNum = params.nhsNum
+        String NHSNO_PATTERN = '^[0-9]{10}$'
+        Pattern pattern = Pattern.compile(NHSNO_PATTERN);
+        Matcher matcher = pattern.matcher(nhsNum);
+
+        if(nhsNum.equals(""))
+        {
+            render(template: "nhsNumberValidation", model: [valid: false])
+            return
+        }
+
+        if(!nhsNum.equals("") && !matcher.matches())
+        {
+            render(template: "nhsNumberValidation", model: [valid: false])
+            return
+        }
+
+        int[] digits = new int[10];
+        int[] values = new int[10];
+        int sum = 0;
+        for(int i=0;i<9;i++)
+        {
+            digits[i] = Integer.parseInt(nhsNum.substring(i, i+1));
+            values[i] = digits[i] * (10-i);
+            sum += values[i];
+        }
+        //System.out.println("Sum : " + sum);
+        digits[9] = Integer.parseInt(nhsNum.substring(9, 10));
+        int rem = 11 - (sum % 11);
+        //System.out.println("Rem : " + rem);
+        if(rem == 11)
+        {
+            rem = 0;
+        }
+        else if(rem == 10)
+        {
+            render(template: "nhsNumberValidation", model: [valid: false])
+            return
+        }
+        if(digits[9] != rem)
+        {
+            render(template: "nhsNumberValidation", model: [valid: false])
+            return
+        }
+        render(template: "nhsNumberValidation", model: [valid: true])
     }
 
     @Transactional
