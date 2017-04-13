@@ -6,6 +6,7 @@ package rdmdt
  */
 class FamilyHistoryType {
 
+    static auditable = true
     static constraints = {
         familyHistoryTypeName()
     }

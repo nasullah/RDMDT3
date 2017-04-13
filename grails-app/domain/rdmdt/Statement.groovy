@@ -1,6 +1,7 @@
 package rdmdt
 
 class Statement {
+    static auditable = true
     static belongsTo = [phenotyping:RareDiseasesPhenotypeReport]
     static constraints = {
         identifier blank: false, matches: /HP:[0-9]{7}/
