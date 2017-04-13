@@ -18,7 +18,13 @@ This menu is used to show function that can be triggered on the content (an obje
 			%{--</li>--}%
 		%{--</g:if>--}%
 
-		<g:if test="${( params.controller != 'referralRecord' && params.action != "filteredReferralList") && (params.controller != "RareDiseasesPhenotypeReport" && params.action != "create")}">
+		<g:if test="${ params.controller == 'rareDiseasesPhenotypeReport' }">
+			<li>
+				<g:link controller="referralRecord" action="show" params="['id': rareDiseasesPhenotypeReportInstance?.referralRecord?.id]"><i class="glyphicon glyphicon-menu-left"></i> Back To Application</g:link>
+			</li>
+		</g:if>
+
+		<g:if test="${( params.controller != 'referralRecord' && params.action != "filteredReferralList") && (params.controller != "rareDiseasesPhenotypeReport" && params.action != "create")}">
 			<g:if test="${ params.controller != 'clinician'}">
 				<li class="${ params.action == "list" ? 'active' : '' }">
 					<g:link action="list"><i class="glyphicon glyphicon-th-list"></i> <g:message code="default.list.label" args="[entityName]"/></g:link>
@@ -32,7 +38,7 @@ This menu is used to show function that can be triggered on the content (an obje
 			%{--</li>--}%
 		%{--</g:if>--}%
 
-		<g:if test="${ (params.controller != 'referralRecord' && params.action != "filteredReferralList") && (params.controller != "RareDiseasesPhenotypeReport" && params.action != "create")}">
+		<g:if test="${ (params.controller != 'referralRecord' && params.action != "filteredReferralList" && params.action != "exportOptions") && (params.controller != "rareDiseasesPhenotypeReport" && params.action != "create")}">
 			<g:if test="${ params.controller != 'clinician'}">
 				<li class="${ params.action == "create" ? 'active' : '' }">
 					<g:link action="create"><i class="glyphicon glyphicon-plus"></i> <g:message code="default.new.label"  args="[entityName]"/></g:link>
@@ -56,10 +62,18 @@ This menu is used to show function that can be triggered on the content (an obje
 				<g:elseif test="${ params.controller == 'clinician'}">
 					<g:link action="edit" id="${params.id}"><i class="glyphicon glyphicon-pencil"></i> Edit Profile</g:link>
 				</g:elseif>
+				<g:elseif test="${ params.controller == 'rareDiseasesPhenotypeReport'}">
+					<g:link action="edit" id="${params.id}"><i class="glyphicon glyphicon-pencil"></i> Edit Phenotype Report</g:link>
+				</g:elseif>
 				<g:else>
 					<g:link action="edit" id="${params.id}"><i class="glyphicon glyphicon-pencil"></i> <g:message code="default.edit.label"  args="[entityName]"/></g:link>
 				</g:else>
 			</li>
+			<g:if test="${ params.controller == 'referralRecord'}">
+				<li class="">
+					<g:link action="sampleTracking" id="${params.id}"><i class="glyphicon glyphicon-eye-open"></i> Sample Tracking</g:link>
+				</li>
+			</g:if>
 			<li class="">
 				<g:render template="/_common/modals/deleteTextLink"/>
 			</li>

@@ -163,6 +163,38 @@
 				</a>
 			</li>
 
+			<hr/>
+
+			<li class="">
+				<a tabindex="-1" href="#">
+					<b>Data Export</b></a>
+			</li>
+
+			<p>
+
+			<li class="">
+				<a href="${createLink(uri: '/clinician/exportOptions')}">
+					<i class="glyphicon glyphicon-export"></i>
+					Export Application Data
+				</a>
+			</li>
+
+			<hr/>
+
+			<li class="">
+				<a tabindex="-1" href="#">
+					<b>StarLims Data</b></a>
+			</li>
+
+			<p>
+
+			<li class="">
+				<a href="${createLink(uri: '/index/loadStarLimsCsvFile')}">
+					<i class="glyphicon glyphicon-upload"></i>
+					Load StarLims Data
+				</a>
+			</li>
+
 		</ul>
 
 	</li>
