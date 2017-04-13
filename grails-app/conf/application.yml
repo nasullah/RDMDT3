@@ -141,11 +141,13 @@ environments:
     test:
         uploadFolder: C:/Users/nasullah.alham/Desktop/upload_folder/
     production:
-        uploadFolder: /home/nasullah/attachedDocument/
+        uploadFolder: C:/Users/BRC15Admin/Documents/upload_folder/
 
 ---
 server:
     contextPath: '/RDMDT'
+    compression:
+          enabled: true
 
 ---
 ---
@@ -158,7 +160,7 @@ environments:
             serverURL: http://localhost:8080
     production:
         grails:
-            serverURL: http://163.1.88.185:8585/RDMDT
+            serverURL: http://oxnetbrc15.oxnet.nhs.uk:8080/RDMDT
 
 ---
  grails:
