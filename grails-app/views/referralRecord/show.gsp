@@ -73,7 +73,7 @@
 				</tr>
 			</g:else>
 
-			<g:if test="${referralRecordInstance.referralStatus == ReferralStatus.findByReferralStatusName('Approved')}">
+			<g:if test="${referralRecordInstance?.referralStatus == ReferralStatus.findByReferralStatusName('Approved')}">
 				<tr class="prop">
 					<td valign="top" class="name">Number and identity of family members for sequencing</td>
 
@@ -244,7 +244,7 @@
 				<td valign="top" class="name"><g:message code="referralRecord.clinicalDetails.label" default="Clinical Details" /></td>
 
 				<td valign="top" style="text-align: left;" class="value">
-					<g:each in="${referralRecordInstance.clinicalDetails}" var="c">
+					<g:each in="${referralRecordInstance.clinicalDetails?.sort{it?.id}}" var="c">
 						<p>${c}</P>
 					</g:each>
 				</td>
@@ -546,7 +546,7 @@
 				<td valign="top" style="text-align: left;" class="value">
 					<ul>
 					<g:each in="${referralRecordInstance.attachedEvidence}" var="a">
-						<li><g:link controller="attachedEvidence" action="show" id="${a.id}">${a.type}: ${a.toString().subSequence(a.toString().lastIndexOf('/')+3, a.toString().length())}</g:link></li>
+						<li><g:link controller="attachedEvidence" action="show" id="${a.id}" target="_blank">${a.type}: ${a.toString().subSequence(a.toString().lastIndexOf('/')+3, a.toString().length())}</g:link></li>
 					</g:each>
 					</ul>
 				</td>
@@ -575,6 +575,17 @@
 				<td valign="top" class="value">${fieldValue(bean: referralRecordInstance, field: "adminNote")}</td>
 
 			</tr>
+
+			<g:if test="${referralRecordInstance.rareDiseasesPhenotypeReports}">
+				<tr class="prop">
+					<td valign="top" class="name">Rare Diseases Phenotype Report</td>
+
+					<td valign="top" style="text-align: left;" class="value">
+						<g:link controller="rareDiseasesPhenotypeReport" action="show" id="${referralRecordInstance?.rareDiseasesPhenotypeReports?.first()?.id}">Phenotype Report</g:link>
+					</td>
+
+				</tr>
+			</g:if>
 		
 		</tbody>
 	</table>
@@ -621,7 +632,7 @@
 <g:if test="${referralRecordInstance.referralStatus != ReferralStatus.findByReferralStatusName('Suspended')}">
 	<a class='btn btn-warning btn-xs' <g:link action="updateStatus" params="['referralRecord': referralRecordInstance?.id, referralStatus: ReferralStatus.findByReferralStatusName('Suspended')?.id]"><i class="glyphicon glyphicon-flag"></i> Suspend Application</g:link>
 </g:if>
-<g:if test="${referralRecordInstance.referralStatus == ReferralStatus.findByReferralStatusName('Approved')}">
+<g:if test="${referralRecordInstance.referralStatus == ReferralStatus.findByReferralStatusName('Approved') && !referralRecordInstance.rareDiseasesPhenotypeReports}">
 	<a class='btn btn-success btn-xs' <g:link controller="rareDiseasesPhenotypeReport" action="create" params="['referralRecord': referralRecordInstance?.id, 'specificDisorderId':referralRecordInstance?.approvedTargetCategory?.originalId]"><i class="glyphicon glyphicon-plus"></i> Add Phenotypes</g:link>
 </g:if>
 
@@ -649,16 +660,20 @@
 	<p class="text-primary">Letters</p>
 
 	<g:if test="${referralRecordInstance.referralStatus == ReferralStatus.findByReferralStatusNameOrReferralStatusName('Review Submitted', 'Review Requested')}">
-		<a class='btn btn-default btn-xs' <g:link  action="renderWednesdayMeetingReviewLetter" id="${referralRecordInstance?.id}"><i class="glyphicon glyphicon-print"></i> Print Wednesday Meeting Review Letter</g:link>
+		<a class='btn btn-default btn-xs' <g:link  action="renderWednesdayMeetingReviewLetter" id="${referralRecordInstance?.id}" target="_blank"><i class="glyphicon glyphicon-print"></i> Print Wednesday Meeting Review Letter</g:link>
 	</g:if>
 
 	<g:if test="${(referralRecordInstance.program && referralRecordInstance.program == Program.findByName('HICF2 Whole Genome Sequencing Programme')) || (referralRecordInstance.approvedProgram && referralRecordInstance.approvedProgram == Program.findByName('HICF2 Whole Genome Sequencing Programme'))}">
-		<a class='btn btn-default btn-xs' <g:link  action="renderHICFLetter" id="${referralRecordInstance?.id}"><i class="glyphicon glyphicon-print"></i> Print HICF Letter</g:link>
+		<a class='btn btn-default btn-xs' <g:link  action="renderHICFLetter" id="${referralRecordInstance?.id}" target="_blank"><i class="glyphicon glyphicon-print"></i> Print HICF Letter</g:link>
 	</g:if>
 
 	<g:if test="${referralRecordInstance.referralStatus == ReferralStatus.findByReferralStatusName('Not Approved')}">
-		<a class='btn btn-default btn-xs' <g:link  action="renderNotApprovedLetter" id="${referralRecordInstance?.id}"><i class="glyphicon glyphicon-print"></i> Print Not Approved Letter</g:link>
+		<a class='btn btn-default btn-xs' <g:link  action="renderNotApprovedLetter" id="${referralRecordInstance?.id}" target="_blank"><i class="glyphicon glyphicon-print"></i> Print Not Approved Letter</g:link>
 	</g:if>
+
+</sec:ifAnyGranted>
+
+<sec:ifAnyGranted roles="ROLE_ADMIN, ROLE_USER">
 
 	<g:if test="${referralRecordInstance.referralStatus == ReferralStatus.findByReferralStatusName('Approved')}">
 		<a class='btn btn-default btn-xs' <g:link  action="renderStandardApprovalLetter" id="${referralRecordInstance?.id}"><i class="glyphicon glyphicon-print"></i> Print Standard Approval Letter</g:link>
@@ -668,33 +683,34 @@
 
 </sec:ifAnyGranted>
 
-<g:javascript plugin="jquery" library="jquery" />
-<script>
-	showEditButton();
-	function showEditButton(){
-		if ($("#reviewDetails").val() == ""){
-			$("#saveButton").show();
-			$("#updateButton").hide();
-			$("#editButton").hide();
-		} else{
-			$("#reviewDetails").prop('readonly', true);
-			$("#saveButton").hide();
-			$("#updateButton").hide();
-			$("#editButton").show()
+<content tag="javascript">
+	<script>
+		showEditButton();
+		function showEditButton(){
+			if ($("#reviewDetails").val() == ""){
+				$("#saveButton").show();
+				$("#updateButton").hide();
+				$("#editButton").hide();
+			} else{
+				$("#reviewDetails").prop('readonly', true);
+				$("#saveButton").hide();
+				$("#updateButton").hide();
+				$("#editButton").show()
+			}
 		}
-	}
 
-	function hideEditButton(){
-		$("#reviewDetails").prop('readonly', false);
-		$("#updateButton").show();
-		$("#editButton").hide();
-	}
+		function hideEditButton(){
+			$("#reviewDetails").prop('readonly', false);
+			$("#updateButton").show();
+			$("#editButton").hide();
+		}
 
-	function showDialog(){
-		$('#requestReviewDial').modal()
-	}
+		function showDialog(){
+			$('#requestReviewDial').modal()
+		}
 
-</script>
+	</script>
+</content>
 
 </body>
 
