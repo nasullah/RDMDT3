@@ -102,6 +102,12 @@ class ReferralRecordController {
                 }
             }
             def referralRecordInstanceList = ReferralRecord.findAllByClinicianOrCorrespondingClinician(clinician, clinician).sort {it.referralStatus.referralStatusName}
+            def referralRecordInstanceListOfCoApplicants = CoApplicant.findAllByCoApplicant(clinician).referralRecord
+            if (!referralRecordInstanceList.empty){
+                referralRecordInstanceList.addAll(referralRecordInstanceListOfCoApplicants)
+            }else{
+                referralRecordInstanceList = referralRecordInstanceListOfCoApplicants
+            }
             [referralRecordInstanceList: referralRecordInstanceList]
         }
     }
@@ -629,7 +635,9 @@ class ReferralRecordController {
                 }
             }
             if (clinician){
-                if (referralRecordInstance.clinician == clinician || referralRecordInstance.correspondingClinician == clinician){
+                if (referralRecordInstance.clinician == clinician
+                        || referralRecordInstance.correspondingClinician == clinician
+                        || CoApplicant.findByReferralRecordAndCoApplicant(referralRecordInstance, clinician)){
                     respond referralRecordInstance: referralRecordInstance
                 }else {
                     flash.message = "You cannot edit this application"
@@ -1071,7 +1079,9 @@ class ReferralRecordController {
                 }
             }
             if (clinician){
-                if (referralRecordInstance.clinician == clinician || referralRecordInstance.correspondingClinician == clinician){
+                if (referralRecordInstance.clinician == clinician
+                        || referralRecordInstance.correspondingClinician == clinician
+                        || CoApplicant.findByReferralRecordAndCoApplicant(referralRecordInstance, clinician)){
                     if (referralRecordInstance.pedigree){
                         def pedigreeFile = new File(referralRecordInstance.pedigree)
                         if (pedigreeFile.exists()){
