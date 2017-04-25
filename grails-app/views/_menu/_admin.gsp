@@ -179,6 +179,13 @@
 				</a>
 			</li>
 
+			<li class="">
+				<a href="${createLink(uri: '/index/exportUsers?extension=xls&format=excel')}">
+					<i class="glyphicon glyphicon-export"></i>
+					Export User List
+				</a>
+			</li>
+
 			<hr/>
 
 			<li class="">
