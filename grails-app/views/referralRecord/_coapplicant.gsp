@@ -1,13 +1,13 @@
 <%@ page import="rdmdt.EligibilityType; rdmdt.Penetrance; rdmdt.Consanguinity; rdmdt.Ethnicity; rdmdt.Gender; rdmdt.AgeUnit; rdmdt.ReferralStatus; rdmdt.Program; rdmdt.Patient; rdmdt.AttachedEvidenceType; rdmdt.RelationshipType; rdmdt.Clinician; rdmdt.ReferralRecord" %>
 
 
-<div class="row" id="coapplicantDetails1" style="display: none;">
+            <div class="row" id="coapplicantDetails1">
                 <div class="col-lg-6">
                     <div class="">
                         <label class="control-label">Co-applicant (enter name)</label>
                         <g:if test="${referralRecordInstance?.coApplicants?.getAt(0)}">
                             <g:set var="coapplicant1Value" value="${referralRecordInstance?.coApplicants?.getAt(0)}" />
-                            <g:set var="coapplicant1Id" value="${referralRecordInstance?.coApplicants?.getAt(0)?.id}" />
+                            <g:set var="coapplicant1Id" value="${referralRecordInstance?.coApplicants?.getAt(0)?.coApplicant?.id}" />
                         </g:if>
                         <g:else>
                             <g:set var="coapplicant1Value" value="${Clinician.findById(params.coapplicant1)}" />
@@ -23,20 +23,21 @@
                                 item-selected.delegate="callCoApplicant1($event.detail.value)"
                                 max-items="20"
                                 min-chars="2"
-                                value="${coapplicant1Value}"></auto-complete>
+                                value="${coapplicant1Value}">
+                            </auto-complete>
                         </div>
                         <g:hiddenField id ="coapplicant1" name ="coapplicant1" value="${coapplicant1Id}"/>
                     </div>
                 </div>
             </div>
 
-            <div class="row" id="coapplicantDetails2" style="display: none;">
+            <div class="row" id="coapplicantDetails2">
                 <div class="col-lg-6">
                     <div class="">
                         <label class="control-label">Co-applicant (enter name)</label>
                         <g:if test="${referralRecordInstance?.coApplicants?.getAt(1)}">
                             <g:set var="coapplicant2Value" value="${referralRecordInstance?.coApplicants?.getAt(1)}" />
-                            <g:set var="coapplicant2Id" value="${referralRecordInstance?.coApplicants?.getAt(1)?.id}" />
+                            <g:set var="coapplicant2Id" value="${referralRecordInstance?.coApplicants?.getAt(1)?.coApplicant?.id}" />
                         </g:if>
                         <g:else>
                             <g:set var="coapplicant2Value" value="${Clinician.findById(params.coapplicant2)}" />
@@ -52,20 +53,21 @@
                                 item-selected.delegate="callCoApplicant2($event.detail.value)"
                                 max-items="20"
                                 min-chars="2"
-                                value="${coapplicant2Value}"></auto-complete>
+                                value="${coapplicant2Value}">
+                            </auto-complete>
                         </div>
                         <g:hiddenField id ="coapplicant2" name ="coapplicant2" value="${coapplicant2Id}"/>
                     </div>
                 </div>
             </div>
 
-            <div class="row" id="coapplicantDetails3" style="display: none;">
+            <div class="row" id="coapplicantDetails3">
                 <div class="col-lg-6">
                     <div class="">
                         <label class="control-label">Co-applicant (enter name)</label>
                         <g:if test="${referralRecordInstance?.coApplicants?.getAt(2)}">
                             <g:set var="coapplicant3Value" value="${referralRecordInstance?.coApplicants?.getAt(2)}" />
-                            <g:set var="coapplicant3Id" value="${referralRecordInstance?.coApplicants?.getAt(2)?.id}" />
+                            <g:set var="coapplicant3Id" value="${referralRecordInstance?.coApplicants?.getAt(2)?.coApplicant?.id}" />
                         </g:if>
                         <g:else>
                             <g:set var="coapplicant3Value" value="${Clinician.findById(params.coapplicant3)}" />
@@ -81,20 +83,21 @@
                                 item-selected.delegate="callCoApplicant3($event.detail.value)"
                                 max-items="20"
                                 min-chars="2"
-                                value="${coapplicant3Value}"></auto-complete>
+                                value="${coapplicant3Value}">
+                            </auto-complete>
                         </div>
                         <g:hiddenField id ="coapplicant3" name ="coapplicant3" value="${coapplicant3Id}"/>
                     </div>
                 </div>
             </div>
 
-            <div class="row" id="coapplicantDetails4" style="display: none;">
+            <div class="row" id="coapplicantDetails4">
                 <div class="col-lg-6">
                     <div class="">
                         <label class="control-label">Co-applicant (enter name)</label>
                         <g:if test="${referralRecordInstance?.coApplicants?.getAt(3)}">
                             <g:set var="coapplicant4Value" value="${referralRecordInstance?.coApplicants?.getAt(3)}" />
-                            <g:set var="coapplicant4Id" value="${referralRecordInstance?.coApplicants?.getAt(3)?.id}" />
+                            <g:set var="coapplicant4Id" value="${referralRecordInstance?.coApplicants?.getAt(3)?.coApplicant?.id}" />
                         </g:if>
                         <g:else>
                             <g:set var="coapplicant4Value" value="${Clinician.findById(params.coapplicant4)}" />
@@ -110,20 +113,21 @@
                                 item-selected.delegate="callCoApplicant4($event.detail.value)"
                                 max-items="20"
                                 min-chars="2"
-                                value="${coapplicant4Value}"></auto-complete>
+                                value="${coapplicant4Value}">
+                            </auto-complete>
                         </div>
                         <g:hiddenField id ="coapplicant4" name ="coapplicant4" value="${coapplicant4Id}"/>
                     </div>
                 </div>
             </div>
 
-            <div class="row" id="coapplicantDetails5" style="display: none;">
+            <div class="row" id="coapplicantDetails5">
                 <div class="col-lg-6">
                     <div class="">
                         <label class="control-label">Co-applicant (enter name)</label>
                         <g:if test="${referralRecordInstance?.coApplicants?.getAt(4)}">
                             <g:set var="coapplicant5Value" value="${referralRecordInstance?.coApplicants?.getAt(4)}" />
-                            <g:set var="coapplicant5Id" value="${referralRecordInstance?.coApplicants?.getAt(4)?.id}" />
+                            <g:set var="coapplicant5Id" value="${referralRecordInstance?.coApplicants?.getAt(4)?.coApplicant?.id}" />
                         </g:if>
                         <g:else>
                             <g:set var="coapplicant5Value" value="${Clinician.findById(params.coapplicant5)}" />
@@ -139,7 +143,8 @@
                                 item-selected.delegate="callCoApplicant5($event.detail.value)"
                                 max-items="20"
                                 min-chars="2"
-                                value="${coapplicant5Value}"></auto-complete>
+                                value="${coapplicant5Value}">
+                            </auto-complete>
                         </div>
                         <g:hiddenField id ="coapplicant5" name ="coapplicant5" value="${coapplicant5Id}"/>
                     </div>

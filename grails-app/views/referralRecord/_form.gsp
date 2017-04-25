@@ -964,7 +964,12 @@
 			callClinician: callClinician,
 			callCorrespondingClinician: callCorrespondingClinician,
 			callCategory: callCategory,
-			callApprovedTargetCategory: callApprovedTargetCategory
+			callApprovedTargetCategory: callApprovedTargetCategory,
+			callCoApplicant1:callCoApplicant1,
+			callCoApplicant2:callCoApplicant2,
+			callCoApplicant3:callCoApplicant3,
+			callCoApplicant4:callCoApplicant4,
+			callCoApplicant5:callCoApplicant5
 		}
 
 		function callClinician(clinician){
