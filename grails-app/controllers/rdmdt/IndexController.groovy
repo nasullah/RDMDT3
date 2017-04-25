@@ -7,6 +7,7 @@ import org.springframework.security.access.annotation.Secured
  */
 class IndexController {
     def springSecurityService
+    def exportService
 
     @Secured(['IS_AUTHENTICATED_REMEMBERED'])
     def index() {
@@ -51,6 +52,51 @@ class IndexController {
                     log.error(ex)
                 }
             }
+        }
+    }
+
+    @Secured(['ROLE_ADMIN'])
+    def exportUsers(){
+        if(params?.format && params.format != "html"){
+            response.contentType = grailsApplication.config.grails.mime.types[params.format]
+            response.setHeader("Content-disposition", "attachment; filename=Users.${params.extension}")
+            def firstName = { domain, value ->
+                def username = domain?.username?.toString()
+                if(username?.contains('.')){
+                    return username?.substring(0, username?.lastIndexOf('.'))
+                }else {
+                    return username
+                }
+            }
+            def surname = { domain, value ->
+                def username = domain?.username?.toString()
+                if(username?.contains('.')){
+                    return username?.substring(username?.lastIndexOf('.') + 1, username?.size())
+                }else {
+                    return ""
+                }
+            }
+
+            def email = { domain, value ->
+                def username = domain?.username?.toString()
+                if(username?.contains('.')) {
+                    def forename = username?.split("\\.")[0]
+                    def lastName = username?.split("\\.")[1]
+                    def clinician = Clinician.createCriteria().get {
+                        and {
+                            eq("forename", forename, [ignoreCase: true])
+                            eq("surname", lastName, [ignoreCase: true])
+                        }
+                    }
+                    return clinician?.email
+                }
+            }
+
+            List fields = ["First Name", "Surname", "Email"]
+            Map labels = [:]
+            Map formatters = ["First Name": firstName, "Surname":surname, "Email":email]
+            Map parameters = [title: "Users List", "column.widths": [0.2, 0.2, 0.5]]
+            exportService.export(params.format, response.outputStream, User.list(), fields, labels, formatters, parameters)
         }
     }
 }
