@@ -315,6 +315,18 @@ class ReferralRecordController {
     }
 
     @Transactional
+    def removeSpacesFromNHSNumber(){
+        def patientList = Patient.list()
+        patientList.each {patient ->
+            if(patient.nhsNumber){
+                patient.nhsNumber = patient.nhsNumber.replace(' ', '').trim()
+                patient.save flush: true
+            }
+        }
+        redirect controller: "index", action: "index"
+    }
+
+    @Transactional
     def save(ReferralRecord referralRecordInstance) {
         if (referralRecordInstance == null) {
             notFound()
@@ -327,14 +339,18 @@ class ReferralRecordController {
             return
         }
 
-        if (params.nhsNumberProband && Patient.findByNhsNumber(params.nhsNumberProband)){
-            flash.message = "A patient with NHS number ${params.nhsNumberProband} already exists"
+        def nhsNumberProband = params.nhsNumberProband
+        if (nhsNumberProband){
+            nhsNumberProband = nhsNumberProband.toString().replace(' ', '').trim()
+        }
+        if (nhsNumberProband && Patient.findByNhsNumber(nhsNumberProband)){
+            flash.message = "A patient with NHS number ${nhsNumberProband} already exists"
 //            respond referralRecordInstance, view: 'create'
             render view: 'create', model: [referralRecordInstance: referralRecordInstance]
             return
         }
 
-        def proband = new Patient(isProband: true, nhsNumber: params.nhsNumberProband, gender: params.genderProband, ethnicity: params.ethnicityProband,
+        def proband = new Patient(isProband: true, nhsNumber: nhsNumberProband, gender: params.genderProband, ethnicity: params.ethnicityProband,
                                   otherEthnicity: params.otherEthnicityProband, age: params.ageProband, ageUnit: params.egeUnitProband, givenName: params.givenName, familyName: params.familyName)
         if (proband){
             referralRecordInstance.addToPatients(proband)
@@ -686,11 +702,20 @@ class ReferralRecordController {
             return
         }
 
+        def proband = Patient.findByReferralRecordAndIsProband(referralRecordInstance, true)
+        def nhsNumberProband = params.nhsNumberProband
+        if (nhsNumberProband){
+            nhsNumberProband = nhsNumberProband.toString().replace(' ', '').trim()
+        }
+        if (nhsNumberProband && proband.nhsNumber && proband.nhsNumber != nhsNumberProband && Patient.findByNhsNumber(nhsNumberProband)){
+            flash.message = "A patient with NHS number ${nhsNumberProband} already exists"
+            render view: 'edit', model: [referralRecordInstance: referralRecordInstance]
+            return
+        }
+
         referralRecordInstance.save flush: true
 
-        def proband = Patient.findByReferralRecordAndIsProband(referralRecordInstance, true)
-
-        proband.nhsNumber = params.nhsNumberProband
+        proband.nhsNumber = nhsNumberProband
         proband.gender = Gender.findById(params.long('genderProband'))
         proband.ethnicity = Ethnicity.findById(params.long('ethnicityProband'))
         proband.otherEthnicity = params.otherEthnicityProband
