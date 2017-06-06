@@ -42,30 +42,21 @@
 <br/>
 
 <span style="font-size: 12pt">${form?.clinician?.professionalTitle} ${form?.clinician?.forename} ${form?.clinician?.surname}</span><br/>
-
-<g:each in="${form.coApplicants}" var="coApplicant">
-    <span style="font-size: 12pt">${coApplicant?.professionalTitle} ${coApplicant?.forename} ${coApplicant?.surname}</span><br/>
-</g:each>
-
 <span style="font-size: 12pt">${form?.clinician?.departmentName}</span><br/>
-
-<g:each in="${form.coApplicants}" var="coApplicant">
-    <span style="font-size: 12pt">${coApplicant?.clinician?.departmentName}</span><br/>
-</g:each>
-
 <span style="font-size: 12pt">${form?.clinician?.address}</span><br/>
 <span style="font-size: 12pt">${form?.clinician?.postcode}</span><br/>
 
+<br/>
+
 <g:each in="${form.coApplicants}" var="coApplicant">
-    <span style="font-size: 12pt">${form?.clinician?.address}</span><br/>
-    <span style="font-size: 12pt">${form?.clinician?.postcode}</span><br/>
+    <span style="font-size: 12pt">${coApplicant?.coApplicant?.professionalTitle} ${coApplicant?.coApplicant?.forename} ${coApplicant?.coApplicant?.surname}</span><br/>
 </g:each>
 
 <p style="font-size: 12pt"> ${new Date().format('dd/MM/yyy')}</p>
 
 <p style="font-size: 12pt"> Dear ${form?.clinician?.professionalTitle} ${form?.clinician?.surname},
     <g:each in="${form.coApplicants}" var="coApplicant">
-        <span style="font-size: 12pt"> ${coApplicant?.professionalTitle} ${coApplicant?.surname},</span>
+        <span style="font-size: 12pt"> ${coApplicant?.coApplicant?.professionalTitle} ${coApplicant?.coApplicant?.surname},</span>
     </g:each>
 </p>
 

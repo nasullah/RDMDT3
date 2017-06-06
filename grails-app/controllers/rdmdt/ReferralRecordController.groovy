@@ -158,43 +158,43 @@ class ReferralRecordController {
 
     //def pdfRenderingService
     def renderWednesdayMeetingReviewLetter(){
-        def ouh_nhs = new File(ApplicationHolder.application.parentContext.servletContext.getRealPath("/images/ouh_nhs_logo.jpg"))
-        def ox_brc_logos = new File(ApplicationHolder.application.parentContext.servletContext.getRealPath("/images/ox_brc_logos.jpg"))
-        def oxford_uni = new File(ApplicationHolder.application.parentContext.servletContext.getRealPath("/images/oxford_uni.gif"))
-        def julian_knight_signature = new File(ApplicationHolder.application.parentContext.servletContext.getRealPath("/images/julian_knight_signature.jpg"))
+        def ouh_nhs = new File(Holders.grailsApplication.mainContext.servletContext.getRealPath("/images/ouh_nhs_logo.jpg"))
+        def ox_brc_logos = new File(Holders.grailsApplication.mainContext.servletContext.getRealPath("/images/ox_brc_logos.jpg"))
+        def oxford_uni = new File(Holders.grailsApplication.mainContext.servletContext.getRealPath("/images/oxford_uni.gif"))
+        def julian_knight_signature = new File(Holders.grailsApplication.mainContext.servletContext.getRealPath("/images/julian_knight_signature.jpg"))
         def formInstance = ReferralRecord.get(params.long('id'))
         def args = [template:"renderWednesdayMeetingReviewLetter", model:[form:formInstance, ouh_nhs:ouh_nhs.bytes, ox_brc_logos:ox_brc_logos.bytes, oxford_uni:oxford_uni.bytes, julian_knight_signature:julian_knight_signature.bytes]]
-        RenderingService.renderPdf(args+[controller:this])
+        pdfRenderingService.render(args+[controller:this],response)
     }
 
     def renderHICFLetter(){
-        def ouh_nhs = new File(ApplicationHolder.application.parentContext.servletContext.getRealPath("/images/ouh_nhs_logo.jpg"))
-        def ox_brc_logos = new File(ApplicationHolder.application.parentContext.servletContext.getRealPath("/images/ox_brc_logos.jpg"))
-        def oxford_uni = new File(ApplicationHolder.application.parentContext.servletContext.getRealPath("/images/oxford_uni.gif"))
-        def julian_knight_signature = new File(ApplicationHolder.application.parentContext.servletContext.getRealPath("/images/julian_knight_signature.jpg"))
+        def ouh_nhs = new File(Holders.grailsApplication.mainContext.servletContext.getRealPath("/images/ouh_nhs_logo.jpg"))
+        def ox_brc_logos = new File(Holders.grailsApplication.mainContext.servletContext.getRealPath("/images/ox_brc_logos.jpg"))
+        def oxford_uni = new File(Holders.grailsApplication.mainContext.servletContext.getRealPath("/images/oxford_uni.gif"))
+        def julian_knight_signature = new File(Holders.grailsApplication.mainContext.servletContext.getRealPath("/images/julian_knight_signature.jpg"))
         def formInstance = ReferralRecord.get(params.long('id'))
         def args = [template:"renderHICFLetter", model:[form:formInstance, ouh_nhs:ouh_nhs.bytes, ox_brc_logos:ox_brc_logos.bytes, oxford_uni:oxford_uni.bytes, julian_knight_signature:julian_knight_signature.bytes]]
-        RenderingService.renderPdf(args+[controller:this])
+        pdfRenderingService.render(args+[controller:this],response)
     }
 
     def renderOtherTestingConditionalLetter(){
-        def ouh_nhs = new File(ApplicationHolder.application.parentContext.servletContext.getRealPath("/images/ouh_nhs_logo.jpg"))
-        def ox_brc_logos = new File(ApplicationHolder.application.parentContext.servletContext.getRealPath("/images/ox_brc_logos.jpg"))
-        def oxford_uni = new File(ApplicationHolder.application.parentContext.servletContext.getRealPath("/images/oxford_uni.gif"))
-        def julian_knight_signature = new File(ApplicationHolder.application.parentContext.servletContext.getRealPath("/images/julian_knight_signature.jpg"))
+        def ouh_nhs = new File(Holders.grailsApplication.mainContext.servletContext.getRealPath("/images/ouh_nhs_logo.jpg"))
+        def ox_brc_logos = new File(Holders.grailsApplication.mainContext.servletContext.getRealPath("/images/ox_brc_logos.jpg"))
+        def oxford_uni = new File(Holders.grailsApplication.mainContext.servletContext.getRealPath("/images/oxford_uni.gif"))
+        def julian_knight_signature = new File(Holders.grailsApplication.mainContext.servletContext.servletContext.getRealPath("/images/julian_knight_signature.jpg"))
         def formInstance = ReferralRecord.get(params.long('id'))
         def args = [template:"renderOtherTestingConditionalLetter", model:[form:formInstance, ouh_nhs:ouh_nhs.bytes, ox_brc_logos:ox_brc_logos.bytes, oxford_uni:oxford_uni.bytes, julian_knight_signature:julian_knight_signature.bytes]]
-        RenderingService.renderPdf(args+[controller:this])
+        pdfRenderingService.render(args+[controller:this],response)
     }
 
     def renderNotApprovedLetter(){
-        def ouh_nhs = new File(ApplicationHolder.application.parentContext.servletContext.getRealPath("/images/ouh_nhs_logo.jpg"))
-        def ox_brc_logos = new File(ApplicationHolder.application.parentContext.servletContext.getRealPath("/images/ox_brc_logos.jpg"))
-        def oxford_uni = new File(ApplicationHolder.application.parentContext.servletContext.getRealPath("/images/oxford_uni.gif"))
-        def julian_knight_signature = new File(ApplicationHolder.application.parentContext.servletContext.getRealPath("/images/julian_knight_signature.jpg"))
+        def ouh_nhs = new File(Holders.grailsApplication.mainContext.servletContext.getRealPath("/images/ouh_nhs_logo.jpg"))
+        def ox_brc_logos = new File(Holders.grailsApplication.mainContext.servletContext.getRealPath("/images/ox_brc_logos.jpg"))
+        def oxford_uni = new File(Holders.grailsApplication.mainContext.servletContext.getRealPath("/images/oxford_uni.gif"))
+        def julian_knight_signature = new File(Holders.grailsApplication.mainContext.servletContext.getRealPath("/images/julian_knight_signature.jpg"))
         def formInstance = ReferralRecord.get(params.long('id'))
         def args = [template:"renderNotApprovedLetter", model:[form:formInstance, ouh_nhs:ouh_nhs.bytes, ox_brc_logos:ox_brc_logos.bytes, oxford_uni:oxford_uni.bytes, julian_knight_signature:julian_knight_signature.bytes]]
-        RenderingService.renderPdf(args+[controller:this])
+        pdfRenderingService.render(args+[controller:this],response)
     }
 
     def renderStandardApprovalLetter(){

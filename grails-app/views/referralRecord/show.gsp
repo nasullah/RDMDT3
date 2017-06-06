@@ -676,7 +676,7 @@
 <sec:ifAnyGranted roles="ROLE_ADMIN, ROLE_USER">
 
 	<g:if test="${referralRecordInstance.referralStatus == ReferralStatus.findByReferralStatusName('Approved')}">
-		<a class='btn btn-default btn-xs' <g:link  action="renderStandardApprovalLetter" id="${referralRecordInstance?.id}"><i class="glyphicon glyphicon-print"></i> Print Standard Approval Letter</g:link>
+		<a class='btn btn-default btn-xs' <g:link  action="renderStandardApprovalLetter" id="${referralRecordInstance?.id}" target="_blank"><i class="glyphicon glyphicon-print"></i> Print Standard Approval Letter</g:link>
 	</g:if>
 
 	<hr/>
