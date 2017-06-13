@@ -108,7 +108,7 @@ class ReferralRecordController {
             }else{
                 referralRecordInstanceList = referralRecordInstanceListOfCoApplicants
             }
-            [referralRecordInstanceList: referralRecordInstanceList]
+            [referralRecordInstanceList: referralRecordInstanceList?.unique()]
         }
     }
 
