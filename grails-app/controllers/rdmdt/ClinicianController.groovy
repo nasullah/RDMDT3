@@ -17,6 +17,7 @@ class ClinicianController {
 
     static allowedMethods = [save: "POST", update: "PUT", delete: "DELETE"]
 
+    def springSecurityService
     def filterPaneService
     def exportService
 
@@ -106,6 +107,30 @@ class ClinicianController {
 
     def show(Clinician clinicianInstance) {
         respond clinicianInstance: clinicianInstance
+    }
+
+    @Transactional
+    def resetPassword(){
+        def username = springSecurityService.currentUser.username
+        def newPassword = params.newPassword
+        def confirmNewPassword = params.confirmNewPassword
+        if (username){
+            if(newPassword && confirmNewPassword){
+                if(newPassword == confirmNewPassword){
+                    def currentUser = User.findByUsername(username)
+                    if (currentUser){
+                        currentUser.password = newPassword
+                        currentUser.save flush: true
+                        flash.message = "Your password has been updated successfully"
+                        redirect(controller: 'index', action: 'index')
+                    }
+
+                }else {
+                    flash.message = "The password does not match please re-enter new password"
+                    redirect(action: 'resetPassword')
+                }
+            }
+        }
     }
 
     def create() {

@@ -99,6 +99,9 @@
 									<li><g:link controller="clinician" action="create"> Add your profile</g:link></li>
 								</ul>
 							</g:else>
+							<ul>
+								<li><g:link controller="clinician" action="resetPassword"> Reset your password</g:link></li>
+							</ul>
 						</div>
 					</div>
 				</div>
